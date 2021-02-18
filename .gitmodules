@@ -1,0 +1,6 @@
+[submodule "modules/history-substring-search"]
+	path = modules/history-substring-search
+	url = https://github.com/zsh-users/zsh-history-substring-search
+[submodule "modules/autosuggestions"]
+	path = modules/autosuggestions
+	url = https://github.com/zsh-users/zsh-autosuggestions
