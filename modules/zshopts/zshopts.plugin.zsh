@@ -1,4 +1,4 @@
-# setopts.zsh
+# zshopts.zsh
 
 # http://zsh.sourceforge.net/Doc/Release/Options.html
 
