@@ -7,3 +7,6 @@
 [submodule "modules/autosuggestions/external"]
 	path = modules/autosuggestions/external
 	url = https://github.com/zsh-users/zsh-autosuggestions
+[submodule "modules/prompts/external/pure"]
+	path = modules/prompts/external/pure
+	url = https://github.com/sindresorhus/pure
