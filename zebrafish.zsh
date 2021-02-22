@@ -13,6 +13,7 @@
       autosuggestions
       pretty-man-pages
       history-substring-search
+      editor
       terminal
       confd
       zfunctions

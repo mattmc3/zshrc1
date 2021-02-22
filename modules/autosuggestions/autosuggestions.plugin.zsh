@@ -1,8 +1,6 @@
 # autosuggestions.zsh
 
-[[ -d "${0:h}/external" ]] ||
-  command git clone --depth 1 https://github.com/zsh-users/zsh-autosuggestions.git "${0:h}/external"
-
+0=${(%):-%N}
 source "${0:h}/external/zsh-autosuggestions.zsh"
 ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE='fg=60'
 
