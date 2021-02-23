@@ -4,7 +4,7 @@
   autoload -Uz $basedir/functions/*(.N)
 
   local loadmodules
-  zstyle -a :zebrafish:modules load loadmodules ||
+  zstyle -a :zebrafish:modules: load loadmodules ||
     loadmodules=(
       xdg
       environment
@@ -21,12 +21,13 @@
       prompts
       completions
     )
+
+  # autoload common Zsh goodies
+  (( $+functions[compinit] )) || autoload -Uz compinit
+  (( $+functions[promptinit] )) || autoload -Uz promptinit
+
   local m
   for m in $loadmodules; do
     source "${basedir}/modules/${m}/${m}.plugin.zsh"
   done
-
-  local themename
-  zstyle -s :zebrafish:module:prompt theme themename || themename=pure
-  prompt "$themename"
 }
