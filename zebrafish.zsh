@@ -1,7 +1,7 @@
 # Zebrafish
 # > A small, fast, single Zsh include file for an awesome Zsh base config
 # Project Home: https://github.com/zshzoo/zebrafish
-# Version:      0.3.0
+# Version:      0.3.1
 # Licenses:
 #   - Zebrafish: MIT (https://github.com/zshzoo/zebrafish/blob/main/LICENSE)
 #   - Prezto: MIT (https://github.com/sorin-ionescu/prezto/blob/master/LICENSE)
@@ -873,20 +873,22 @@ function zf-plugin-load() {
   source $plugin_path/init.zsh
 }
 
-if [[ -z "$gitplugins" ]]; then
-  gitplugins=(
-    zsh-users/zsh-autosuggestions
-    zsh-users/zsh-history-substring-search
-    sindresorhus/pure
-    # zdharma-continuum/fast-syntax-highlighting
-    zsh-users/zsh-syntax-highlighting
-  )
+if [[ ! -f $ZDOTDIR/zsh_plugins ]]; then
+  cat << 'EOPLUGINS' > $ZDOTDIR/zsh_plugins
+sindresorhus/pure
+zsh-users/zsh-autosuggestions
+zsh-users/zsh-history-substring-search
+zsh-users/zsh-syntax-highlighting
+EOPLUGINS
 fi
+
+zmodload zsh/mapfile
+gitplugins=("${(f)mapfile[$ZDOTDIR/zsh_plugins]}")
 for repo in $gitplugins; do
   zf-plugin-clone "https://github.com/$repo"
   zf-plugin-load "${repo##*/}"
 done
-unset repo
+unset gitplugins repo
 
 # set better plugin values
 ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE='fg=8'
