@@ -9,19 +9,11 @@ trim_trailing_whitespace = true
 indent_style = tab
 indent_size = 4
 
-[*.{md,markdown}]
-# Don't trim end spacing because unfortunately Markdown uses that
+[*.md]
+# don't trim trailing space because its valid markdown syntax
 indent_style = space
 trim_trailing_whitespace = false
 
-[*.{bash,zsh,sh}]
-indent_style = space
-indent_size = 2
-
-[.zsh*]
-indent_style = space
-indent_size = 2
-
-[**/functions/*]
+[*.zsh]
 indent_style = space
 indent_size = 2
