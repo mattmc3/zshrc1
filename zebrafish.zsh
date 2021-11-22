@@ -312,6 +312,28 @@ zstyle ':completion:*:(ssh|scp|rsync):*:hosts-ipaddr' ignored-patterns '^(<->.<-
 
 
 #
+# #region Functions
+#
+
+function up() {
+  # go up directories
+  if [[ "$#" -ne 1 ]]; then
+    cd ..
+  elif ! [[ $1 =~ '^[0-9]+$' ]]; then
+    echo "up: expecting int argument" >&2 && return 1
+  else
+    local cdstr=""
+    for i in {1..$1}; do
+      cdstr="../$cdstr"
+    done
+    cd $cdstr
+  fi
+}
+
+# #endregion
+
+
+#
 # #region Autoload Functions
 #
 function zf-funcdir() {
