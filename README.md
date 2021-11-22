@@ -13,10 +13,14 @@
 
 > A small, fast, single Zsh include file for an awesome Zsh base config.
 
+<br>
+<br>
+
 ## Details
 
-Frameworks like Oh-My-Zsh and Prezto are great if you want everything-and-the-kitchen-sink,
-but you pay a performance and complexity penalty for using big Zsh frameworks.
+Frameworks like [Oh-My-Zsh][omz] and [Prezto][prezto] are great if you want
+everything-and-the-kitchen-sink, but you pay a performance and complexity penalty for
+using big Zsh frameworks.
 
 You also could build your own Zsh config from scratch, but that can be a lot of work and
 often requires you to pull together functionality already baked into the Zsh frameworks
@@ -38,3 +42,5 @@ source $ZEBRAFISH_HOME/zebrafish.zsh
 ```
 
 [grml-zshrc]: https://github.com/grml/grml-etc-core/blob/master/etc/zsh/zshrc
+[omz]: https://github.com/ohmyzsh/ohmyzsh
+[prezto]: https://github.com/sorin-ionescu/prezto
