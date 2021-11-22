@@ -26,8 +26,8 @@ You also could build your own Zsh config from scratch, but that can be a lot of 
 often requires you to pull together functionality already baked into the Zsh frameworks
 you leave behind.
 
-Zebrafish is simpler. Similar to [Grml's .zshrc][grml-zshrc], Zebrafish givesy you a
-full featured Zsh config, but encompassed in one simple to use and understand include.
+Zebrafish is simpler. Similar to [Grml's .zshrc][grml-zshrc], Zebrafish gives you a
+full-featured Zsh config, but encompassed in one simple to use and understand include.
 
 Feel free to use it as-is and build off it, or fork it and make it your own.
 
