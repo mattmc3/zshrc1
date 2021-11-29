@@ -1,16 +1,41 @@
 # Zebrafish
-# > A small, fast, single Zsh include file for an awesome Zsh base config
+# > A small, lightning fast, single Zsh include file for an awesome Zsh base config
 # Project Home: https://github.com/zshzoo/zebrafish
 # Licenses:
 #   - Zebrafish: MIT (https://github.com/zshzoo/zebrafish/blob/main/LICENSE)
 #   - Oh-My-Zsh: MIT (https://github.com/ohmyzsh/ohmyzsh/blob/master/LICENSE.txt)
 #   - Prezto: MIT (https://github.com/sorin-ionescu/prezto/blob/master/LICENSE)
 #   - Grml: GPL v2 (https://github.com/grml/grml-etc-core/blob/master/etc/zsh/zshrc)
-ZF_VERSION="0.3.2"
+#   - Zim: MIT (https://github.com/zimfw/zimfw/blob/master/LICENSE)
+ZF_VERSION="0.4.0"
 
 # load zprof first if we need to profile
 [[ ${ZF_PROFILE:-0} -eq 0 ]] || zmodload zsh/zprof
 alias zf-profile="ZF_PROFILE=1 zsh"
+
+#
+# #region XDG
+#
+# XDG
+# https://standards.freedesktop.org/basedir-spec/basedir-spec-latest.html
+# https://wiki.archlinux.org/index.php/XDG_Base_Directory
+# https://wiki.archlinux.org/index.php/XDG_user_directories
+export XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
+export XDG_CACHE_HOME="${XDG_CACHE_HOME:-$HOME/.cache}"
+export XDG_DATA_HOME="${XDG_DATA_HOME:-$HOME/.local/share}"
+export XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-$HOME/.xdg}"
+
+if [[ "$OSTYPE" == darwin* ]]; then
+  export XDG_DESKTOP_DIR=~/Desktop
+  export XDG_DOCUMENTS_DIR=~/Documents
+  export XDG_DOWNLOAD_DIR=~/Downloads
+  export XDG_MUSIC_DIR=~/Music
+  export XDG_PICTURES_DIR=~/Pictures
+  export XDG_VIDEOS_DIR=~/Videos
+  export XDG_PROJECTS_DIR=~/Projects
+fi
+# #endregion
+
 
 #
 # #region Options
@@ -116,25 +141,6 @@ HISTFILE="${XDG_DATA_HOME:-$HOME/.local/share}/zsh/history"
 #
 # #region Environment
 #
-
-# XDG
-# https://standards.freedesktop.org/basedir-spec/basedir-spec-latest.html
-# https://wiki.archlinux.org/index.php/XDG_Base_Directory
-# https://wiki.archlinux.org/index.php/XDG_user_directories
-export XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
-export XDG_CACHE_HOME="${XDG_CACHE_HOME:-$HOME/.cache}"
-export XDG_DATA_HOME="${XDG_DATA_HOME:-$HOME/.local/share}"
-export XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-$HOME/.xdg}"
-
-if [[ "$OSTYPE" == darwin* ]]; then
-  export XDG_DESKTOP_DIR=~/Desktop
-  export XDG_DOCUMENTS_DIR=~/Documents
-  export XDG_DOWNLOAD_DIR=~/Downloads
-  export XDG_MUSIC_DIR=~/Music
-  export XDG_PICTURES_DIR=~/Pictures
-  export XDG_VIDEOS_DIR=~/Videos
-  export XDG_PROJECTS_DIR=~/Projects
-fi
 
 # Set the default Less options.
 # Mouse-wheel scrolling has been disabled by -X (disable screen clearing).
@@ -510,101 +516,6 @@ bindkey '\C-x\C-e' edit-command-line
 
 # file rename magick
 bindkey "^[m" copy-prev-shell-word
-# #endregion
-
-
-#
-# #region Plugins
-#
-function zf-plugin-initfile() {
-  # find and print a plugin's init file and set it to REPLY
-  local plugin_dir="$1"
-  local plugin_name="${1:t}"
-  [[ -d $plugin_dir ]] || return 1
-  local initfiles=(
-    # look for specific files first
-    $plugin_dir/$plugin_name.plugin.zsh(N)
-    $plugin_dir/init.zsh(N)
-    $plugin_dir/$plugin_name.zsh(N)
-    $plugin_dir/$plugin_name(N)
-    $plugin_dir/$plugin_name.zsh-theme(N)
-    # then do more aggressive globbing
-    $plugin_dir/*.plugin.zsh(N)
-    $plugin_dir/*.zsh(N)
-    $plugin_dir/*.zsh-theme(N)
-    $plugin_dir/*.sh(N)
-  )
-  if [[ ${#initfiles[@]} -eq 0 ]]; then
-    echo "zf-plugin-initfile: no init file found; $1" >&2 && return 1
-  fi
-  REPLY=${initfiles[1]}
-  echo $REPLY
-}
-
-function zf-plugin-clone() {
-  local giturl="$1"
-  local plugin_name=${${giturl##*/}%.git}
-  local plugin_dir="${2:-${ZDOTDIR:-$HOME/.config/zsh}/plugins/$plugin_name}"
-
-  # clone if the plugin isn't there already
-  if [[ ! -d $plugin_dir ]]; then
-    command git clone --depth 1 --recursive --shallow-submodules $giturl $plugin_dir
-    if [[ $? -ne 0 ]]; then
-      echo "git clone failed for: $giturl" >&2 && return 1
-    fi
-    if [[ $plugin_name != zsh-syntax-highlighting ]]; then
-      autoload -U zrecompile
-      local f
-      for f in $plugin_dir/**/*.zsh{,-theme}(N); do
-        zrecompile -pq "$f"
-      done
-    fi
-  fi
-}
-
-function zf-plugin-load() {
-  # source the plugin and add it to fpath
-  # if needed, find and symlink an init file
-  local plugin_path="$1"
-  if [[ ! -d $plugin_path ]]; then
-    if [[ ! "$1" == */* ]]; then
-      plugin_path="${ZDOTDIR:-$HOME/.config/zsh}/plugins/$1"
-    else
-      echo "plugin dir not found: $1" >&2 && return 1
-    fi
-  fi
-  local REPLY
-  if [[ ! -e $plugin_path/init.zsh ]]; then
-    zf-plugin-initfile $plugin_path >/dev/null
-    ln -s $REPLY $plugin_path/init.zsh
-  fi
-  fpath+=$plugin_path
-  if [[ -d $plugin_path/functions ]]; then
-    fpath+=$plugin_path/functions
-  fi
-  source $plugin_path/init.zsh
-}
-
-if [[ ! -f $ZDOTDIR/zsh_plugins ]]; then
-  cat << 'EOPLUGINS' > $ZDOTDIR/zsh_plugins
-sindresorhus/pure
-zsh-users/zsh-autosuggestions
-zsh-users/zsh-history-substring-search
-zsh-users/zsh-syntax-highlighting
-EOPLUGINS
-fi
-
-zmodload zsh/mapfile
-gitplugins=("${(f)mapfile[$ZDOTDIR/zsh_plugins]}")
-for repo in $gitplugins; do
-  zf-plugin-clone "https://github.com/$repo"
-  zf-plugin-load "${repo##*/}"
-done
-unset gitplugins repo
-
-# set better plugin values
-ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE='fg=8'
-PURE_PROMPT_SYMBOL="%%"
 # #endregion
 
 
