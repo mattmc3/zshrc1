@@ -88,21 +88,31 @@ echo 'source ${ZDOTDIR:-$HOME/.config/zsh}/zebrafish.zsh' >> ${ZDOTDIR:-~}/.zshr
 
 ## Customization
 
-You can chose to disable certain features by setting the following `zstyle`.
+### Disable features
+
+You can chose to disable certain features by setting the following `zstyle`. Perhaps
+you are already using a plugin manager and don't want Zebrafish to load any plugins.
 
 ```zsh
 # set this zstyle in your .zshrc before sourcing Zebrafish to disable features
-# this disables the prompt and plugins features
+zstyle ':zebrafish:disable' features plugins
+```
+
+The `$zf_features` variable contains everything that's currently enabled in Zebrafish
+if you want to see the list of what you can disable, or refer to this readme.
+
+### Use on a server
+
+In a server environment, you might not want Zebrafish to try to go out to the internet
+and grab plugins or prompts. You can easily run Zebrafish in an isolated environment
+with the following config:
+
+```zsh
+# disables the features that grab stuff from the web
 zstyle ':zebrafish:disable' features \
   prompt \
   plugins
 ```
-
-This can be especially helpful on a server where you want the benefits of Zebrafish, but
-can't hop out to the internet to grab stuff like plugins or prompts.
-
-The `$zf_features` variable contains everything that's currently enabled in Zebrafish
-if you want to see the list of what you can disable, or refer to this readme.
 
 ### Using a different prompt
 
@@ -110,12 +120,15 @@ If you prefer to use a prompt other than [starship], you can disable the Zebrafi
 prompt, and include your preferred prompt in the plugins list.
 
 ```zsh
+# disable the Zebrafish prompt
 zstyle ':zebrafish:disable' features prompt
+
+# add pure prompt, and then all the standard stuff as well
 zstyle ':zebrafish:external' plugins \
+  sindresorhus/pure
   zsh-users/zsh-autosuggestions \
   zsh-users/zsh-history-substring-search \
-  zsh-users/zsh-syntax-highlighting \
-  sindresorhus/pure
+  zsh-users/zsh-syntax-highlighting
 ```
 
 
