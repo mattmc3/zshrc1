@@ -340,11 +340,9 @@ function zf-zfunctions() {
     || fndir=${ZDOTDIR:-~/.config/zsh}/functions
   [[ -d $fndir ]] || return 1
   fpath+=$fndir
-  for fnfile in $fndir/*(N); do
+  for fnfile in $fndir/**/*(N); do
     if test -f $fnfile; then
       autoload -Uz "$fnfile"
-    elif test -d $fnfile; then
-      zf-funcdir $fnfile
     fi
   done
 }
@@ -356,12 +354,11 @@ function zf-zfunctions() {
 #region zshrc.d
 #
 function zf-zshrcd() {
-  local confdir f
+  local confdir f files
   zstyle -s ':zebrafish:zshrc.d' path 'confdir' \
     || confdir=${ZDOTDIR:-~/.config/zsh}/zshrc.d
   [[ -d $confdir ]] || return 1
-  local files=("$confdir"/*.{sh,zsh}(.N))
-  local f
+  files=("$confdir"/*.{sh,zsh}(.N))
   for f in ${(o)files}; do
     case ${f:t} in '~'*) continue;; esac
     source "$f"
@@ -644,3 +641,4 @@ function zf-compinit() {
 
 # done profiling
 [[ ${ZF_PROFILE:-0} -eq 0 ]] || { unset ZF_PROFILE && zprof }
+true
