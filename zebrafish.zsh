@@ -7,7 +7,7 @@
 #   - Prezto: MIT (https://github.com/sorin-ionescu/prezto/blob/master/LICENSE)
 #   - Grml: GPL v2 (https://github.com/grml/grml-etc-core/blob/master/etc/zsh/zshrc)
 #   - Zim: MIT (https://github.com/zimfw/zimfw/blob/master/LICENSE)
-ZF_VERSION="0.5.1"
+ZF_VERSION="0.5.2"
 
 # Profiling
 # load zprof first thing in case we want to profile performance
