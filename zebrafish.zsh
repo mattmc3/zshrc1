@@ -7,13 +7,12 @@
 #   - Prezto: MIT (https://github.com/sorin-ionescu/prezto/blob/master/LICENSE)
 #   - Grml: GPL v2 (https://github.com/grml/grml-etc-core/blob/master/etc/zsh/zshrc)
 #   - Zim: MIT (https://github.com/zimfw/zimfw/blob/master/LICENSE)
+ZF_VERSION="0.5.1"
 
 # Profiling
 # load zprof first thing in case we want to profile performance
 [[ ${ZF_PROFILE:-0} -eq 0 ]] || zmodload zsh/zprof
 alias zf-profile="ZF_PROFILE=1 zsh"
-
-ZF_VERSION="0.5.0"
 
 #
 #region Setup
@@ -34,7 +33,16 @@ ZF_VERSION="0.5.0"
       zfunctions
       zshrcd
       completions
+      plugins
       compinit
+    )
+  typeset -ga zf_plugins
+  zstyle -a ':zebrafish:external' plugins 'zf_plugins' || \
+    zf_plugins=(
+      zsh-users/zsh-autosuggestions
+      zsh-users/zsh-history-substring-search
+      zsh-users/zsh-syntax-highlighting
+      sindresorhus/pure
     )
 }
 #endregion
@@ -351,24 +359,6 @@ function zf-zfunctions() {
 
 
 #
-#region zshrc.d
-#
-function zf-zshrcd() {
-  local confdir f files
-  zstyle -s ':zebrafish:zshrc.d' path 'confdir' \
-    || confdir=${ZDOTDIR:-~/.config/zsh}/zshrc.d
-  [[ -d $confdir ]] || return 1
-  files=("$confdir"/*.{sh,zsh}(.N))
-  for f in ${(o)files}; do
-    case ${f:t} in '~'*) continue;; esac
-    source "$f"
-  done
-}
-(($zf_features[(Ie)zshrcd])) && zf-zshrcd
-#endregion
-
-
-#
 #region Custom completions
 #
 function zf-completions() {
@@ -595,6 +585,74 @@ function up() {
 }
 #endregion
 
+
+#
+#region zshrc.d
+#
+function zf-zshrcd() {
+  local confdir f files
+  zstyle -s ':zebrafish:zshrc.d' path 'confdir' \
+    || confdir=${ZDOTDIR:-~/.config/zsh}/zshrc.d
+  [[ -d $confdir ]] || return 1
+  files=("$confdir"/*.{sh,zsh}(.N))
+  for f in ${(o)files}; do
+    case ${f:t} in '~'*) continue;; esac
+    source "$f"
+  done
+}
+(($zf_features[(Ie)zshrcd])) && zf-zshrcd
+#endregion
+
+
+#
+#region Plugins
+#
+function zf-plugins() {
+  local repo plugin_name plugin_root plugin_dir initfile initfiles
+  zstyle -s ':zebrafish:plugins' path 'plugin_root' \
+    || plugin_root=${ZDOTDIR:-~/.config/zsh}/plugins
+
+  for repo in $zf_plugins; do
+    plugin_name=${repo:t}
+    plugin_dir=$plugin_root/$plugin_name
+    initfile=$plugin_dir/$plugin_name.zsh
+    if [[ ! -d $plugin_dir ]]; then
+      if [[ $repo != "https://"* ]] && [[ $repo != "git@"* ]]; then
+        repo=https://github.com/$repo
+      fi
+      command git clone --depth 1 --recursive --shallow-submodules $repo $plugin_dir
+      if [[ $? -ne 0 ]]; then
+        echo >&2 "git clone failed for: ${repo:t}" && return 1
+      fi
+      if [[ ! -e $initfile ]]; then
+        initfiles=(
+          # look for specific files first
+          $plugin_dir/$plugin_name.zsh(N)
+          $plugin_dir/$plugin_name.plugin.zsh(N)
+          $plugin_dir/init.zsh(N)
+          $plugin_dir/$plugin_name(N)
+          $plugin_dir/$plugin_name.zsh-theme(N)
+          # then do more aggressive globbing
+          $plugin_dir/*.plugin.zsh(N)
+          $plugin_dir/*.zsh(N)
+          $plugin_dir/*.zsh-theme(N)
+          $plugin_dir/*.sh(N)
+        )
+        if [[ ${#initfiles[@]} -eq 0 ]]; then
+          echo >&2 "no plugin init file found for ${repo:t}" && return 1
+        else
+          ln -s ${initfiles[1]} $initfile
+        fi
+      fi
+    fi
+    # source the plugin
+    fpath+=$plugin_dir
+    [[ -d $plugin_dir/functions ]] && fpath+=$plugin_dir/functions
+    source $initfile
+  done
+}
+(($zf_features[(Ie)plugins])) && zf-plugins
+#endregion
 
 #
 #region Compinit
