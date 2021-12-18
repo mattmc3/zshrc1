@@ -55,6 +55,27 @@ curl -fsSL https://raw.githubusercontent.com/mattmc3/zebrafish/main/zebrafish.zs
 echo 'source ${ZDOTDIR:-$HOME/.config/zsh}/zebrafish.zsh' >> ${ZDOTDIR:-~}/.zshrc
 ```
 
+### Customization
+
+You can chose to only enable certain features by setting the following `zstyle`:
+
+```zsh
+# set this zstyle in your .zshrc and remove the features you don't want
+zstyle ':zebrafish:enable' features \
+    environment \
+    zshopts \
+    history \
+    completion-styles \
+    keybindings \
+    termtitle \
+    help \
+    colorized-man-pages \
+    zfunctions \
+    zshrcd \
+    completions \
+    compinit
+```
+
 [grml-zshrc]: https://github.com/grml/grml-etc-core/blob/master/etc/zsh/zshrc
 [ohmyzsh]: https://github.com/ohmyzsh/ohmyzsh
 [prezto]: https://github.com/sorin-ionescu/prezto
