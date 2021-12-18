@@ -7,7 +7,7 @@
 #   - Prezto: MIT (https://github.com/sorin-ionescu/prezto/blob/master/LICENSE)
 #   - Grml: GPL v2 (https://github.com/grml/grml-etc-core/blob/master/etc/zsh/zshrc)
 #   - Zim: MIT (https://github.com/zimfw/zimfw/blob/master/LICENSE)
-ZF_VERSION="0.5.2"
+ZF_VERSION="0.6.0"
 
 # Profiling
 # load zprof first thing in case we want to profile performance
@@ -19,30 +19,32 @@ alias zf-profile="ZF_PROFILE=1 zsh"
 #
 () {
   # drive zebrafish with zstyle settings
-  typeset -ga zf_features
-  zstyle -a ':zebrafish:enable' features 'zf_features' || \
-    zf_features=(
-      environment
-      zshopts
-      history
-      completion-styles
-      keybindings
-      termtitle
-      help
-      colorized-man-pages
-      zfunctions
-      zshrcd
-      completions
-      plugins
-      compinit
-    )
+  typeset -ga zf_features=(
+    environment
+    zshopts
+    history
+    completion-styles
+    keybindings
+    termtitle
+    help
+    colorized-man-pages
+    zfunctions
+    zshrcd
+    completions
+    plugins
+    prompt
+    compinit
+  )
+  local disabled_features
+  zstyle -a ':zebrafish:disable' features 'disabled_features' || disabled_features=()
+  zf_features=${zf_features:|disabled_features}
+
   typeset -ga zf_plugins
   zstyle -a ':zebrafish:external' plugins 'zf_plugins' || \
     zf_plugins=(
       zsh-users/zsh-autosuggestions
       zsh-users/zsh-history-substring-search
       zsh-users/zsh-syntax-highlighting
-      sindresorhus/pure
     )
 }
 #endregion
@@ -654,6 +656,20 @@ function zf-plugins() {
 (($zf_features[(Ie)plugins])) && zf-plugins
 #endregion
 
+
+#
+#region Prompt
+function zf-prompt() {
+  local STARSHIP_CONFIG=${STARSHIP_CONFIG:-~/.config/starship.toml}
+  [[ -f $STARSHIP_CONFIG ]] || {
+    mkdir -p ${STARSHIP_CONFIG:h} && touch $STARSHIP_CONFIG
+  }
+  command -v starship &>/dev/null || sh -c "$(curl -fsSL https://starship.rs/install.sh)"
+  eval "$(starship init zsh)"
+}
+(($zf_features[(Ie)prompt])) && zf-prompt
+
+
 #
 #region Compinit
 #
@@ -696,6 +712,7 @@ function zf-compinit() {
 }
 (($zf_features[(Ie)compinit])) && zf-compinit
 #endregion
+
 
 # done profiling
 [[ ${ZF_PROFILE:-0} -eq 0 ]] || { unset ZF_PROFILE && zprof }

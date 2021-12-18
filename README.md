@@ -18,22 +18,51 @@
 
 ## Details
 
-Zebrafish's goal is simply to bring you a featureful, fast, and modern Zsh shell
-experience via a single include file you source from your .zshrc. You can use it on your
-desktop, or on a remote server with ease.
+Zebrafish is what you might call a _micro-framework_ for Zsh. It's designed to be a
+portable, lightweight, ultra-fast, full-featured Zsh configuration in a single file.
+Equally useful on your desktop or on a remote server, Zebrafish brings many of the
+goodies [found in other shells][fish] to your Zsh configuration without all the bloat.
 
-Frameworks like [Oh-My-Zsh][ohmyzsh] and [Prezto][prezto] are great if you want
-everything-and-the-kitchen-sink, but you pay a performance and complexity penalty for
-using these frameworks.
+Zebrafish's goal is to give you a great DIY Zsh experience from a single file. Other
+full Zsh Frameworks like [Oh-My-Zsh][ohmyzsh] and [Prezto][prezto] are great if
+you want everything-and-the-kitchen-sink, but you pay a performance and complexity
+penalty for using these frameworks.
 
 Many prefer to build their own Zsh config from scratch, but that can be a lot of work
 and often requires you to pull together functionality already baked into the Zsh
 frameworks you leave behind.
 
-Zebrafish is simpler. Similar to [Grml's .zshrc][grml-zshrc], Zebrafish gives you a
-full-featured Zsh config, but encompassed in one simple to use and understand include.
+Zebrafish is simpler. Similar to [Grml's .zshrc][grml-zshrc], Zebrafish gives you
+everything you need for a full-featured Zsh config, but encompassed in one simple to
+grok Zsh include that will grow with you as you use Zsh.
 
-Feel free to use it as-is and build off it, or fork it and make it your own.
+Feel free to use it as-is, build off it, or fork it and make it entirely your own.
+
+## Features
+
+| feature             | description                                                                |
+| ------------------- | -------------------------------------------------------------------------- |
+| environment         | Set common environment variables                                           |
+| zshopts             | Better Zsh options than the defaults                                       |
+| history             | Better Zsh history settings than the defaults                              |
+| completion-styles   | Add zstyle completion options                                              |
+| keybindings         | Add common key bindings                                                    |
+| termtitle           | Set the terminal window title                                              |
+| help                | Use the Zsh built-in help where appropriate                                |
+| colorized-man-pages | Add a splash of color to your man pages                                    |
+| zfunctions          | Use a `functions` directory in `$ZDOTDIR` for your custom Zsh functions    |
+| zshrcd              | Use a `zshrc.d` directory in `$ZDOTDIR` to load config files               |
+| completions         | Use a `completions` directory in `$ZDOTDIR` to add your custom completions |
+| plugins             | Include popular plugins from [zsh-users]                                   |
+| prompt              | Include the amazing [starship] prompt                                      |
+| compinit            | Initialize completions                                                     |
+
+## Plugins
+
+Zebrafish includes a few essential plugins from [zsh-users]:
+- [autosuggestions](https://github.com/zsh-users/zsh-autosuggestions)
+- [history-substring-search](https://github.com/zsh-users/zsh-history-substring-search)
+- [syntax-highlighting](https://github.com/zsh-users/zsh-syntax-highlighting)
 
 ## Installation
 
@@ -51,36 +80,51 @@ To install using a Zsh plugin manager, add the following to your .zshrc
 Grab the Zebrafish file via `curl`, and source it from your `.zshrc`:
 
 ```zsh
-curl -fsSL https://raw.githubusercontent.com/mattmc3/zebrafish/main/zebrafish.zsh -o ${ZDOTDIR:-$HOME/.config/zsh}/zebrafish.zsh
+zf_url=https://raw.githubusercontent.com/mattmc3/zebrafish/main/zebrafish.zsh
+curl -fsSL $zf_url -o ${ZDOTDIR:-$HOME/.config/zsh}/zebrafish.zsh
 echo 'source ${ZDOTDIR:-$HOME/.config/zsh}/zebrafish.zsh' >> ${ZDOTDIR:-~}/.zshrc
 ```
 
-### Customization
+## Customization
 
-You can chose to only enable certain features by setting the following `zstyle`:
+You can chose to disable certain features by setting the following `zstyle`.
 
 ```zsh
-# set this zstyle in your .zshrc and remove the features you don't want
-zstyle ':zebrafish:enable' features \
-    environment \
-    zshopts \
-    history \
-    completion-styles \
-    keybindings \
-    termtitle \
-    help \
-    colorized-man-pages \
-    zfunctions \
-    zshrcd \
-    completions \
-    compinit
+# set this zstyle in your .zshrc before sourcing Zebrafish to disable features
+# this disables the prompt and plugins features
+zstyle ':zebrafish:disable' features \
+  prompt \
+  plugins
 ```
+
+This can be especially helpful on a server where you want the benefits of Zebrafish, but
+can't hop out to the internet to grab stuff like plugins or prompts.
+
+The `$zf_features` variable contains everything that's currently enabled in Zebrafish
+if you want to see the list of what you can disable, or refer to this readme.
+
+### Using a different prompt
+
+If you prefer to use a prompt other than [starship], you can disable the Zebrafish
+prompt, and include your preferred prompt in the plugins list.
+
+```zsh
+zstyle ':zebrafish:disable' features prompt
+zstyle ':zebrafish:external' plugins \
+  zsh-users/zsh-autosuggestions \
+  zsh-users/zsh-history-substring-search \
+  zsh-users/zsh-syntax-highlighting \
+  sindresorhus/pure
+```
+
 
 [grml-zshrc]: https://github.com/grml/grml-etc-core/blob/master/etc/zsh/zshrc
 [ohmyzsh]: https://github.com/ohmyzsh/ohmyzsh
 [prezto]: https://github.com/sorin-ionescu/prezto
-[zshzoo]: https://github.com/zshzoo/zshzoo
+[zsh-users]: https://github.com/zsh-users/
 [pz]: https://github.com/mattmc3/pz
 [zcomet]: https://github.com/agkozak/zcomet
 [zgenom]: https://github.com/jandamm/zgenom
 [znap]: https://github.com/marlonrichert/zsh-snap
+[fish]: https://fishshell.com
+[starship]: https://starship.rs
