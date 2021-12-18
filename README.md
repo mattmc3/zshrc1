@@ -1,6 +1,7 @@
 # Zebrafish
 
-[![MIT License](https://img.shields.io/badge/license-MIT-007EC7.svg?style=flat-square)](/LICENSE)
+[![MIT License](https://img.shields.io/badge/license-MIT-007EC7.svg)](/LICENSE)
+![version](https://img.shields.io/badge/version-v0.6.1-orange)
 
 <a title="Azul [Copyrighted free use], via Wikimedia Commons"
    href="https://commons.wikimedia.org/wiki/File:Zebrafisch.jpg"
