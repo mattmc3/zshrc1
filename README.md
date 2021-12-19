@@ -12,7 +12,7 @@
      src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/ac/Zebrafisch.jpg/512px-Zebrafisch.jpg">
 </a>
 
-> A small, fast, single Zsh include file for an awesome Zsh base config. :zebra: :fish:
+> A lightweight, full-featured, blazing-fast Zsh configuration in just one file. :zebra: :fish:
 
 <br>
 <br>
@@ -25,7 +25,7 @@ Equally useful on your desktop or on a remote server, Zebrafish brings many of t
 goodies [found in other shells][fish] to your Zsh configuration without all the bloat.
 
 Zebrafish's goal is to give you a great DIY Zsh experience from a single file. Other
-full Zsh Frameworks like [Oh-My-Zsh][ohmyzsh] and [Prezto][prezto] are great if
+full Zsh Frameworks like [Oh-My-Zsh][ohmyzsh] and [Prezto][prezto] are nice if
 you want everything-and-the-kitchen-sink, but you pay a performance and complexity
 penalty for using these frameworks.
 
@@ -132,6 +132,20 @@ zstyle ':zebrafish:external' plugins \
   zsh-users/zsh-history-substring-search \
   zsh-users/zsh-syntax-highlighting
 ```
+
+## Performance
+
+Zebrafish is blazing fast. In my tests it was 3 times faster than [prezto] and
+nearly 5 times faster to load than [ohmyzsh]. Test for yourself by running the
+following command:
+
+```zsh
+for i in $(seq 1 10); do
+    /usr/bin/time zsh -i -c exit
+done
+```
+
+![zebrafish](https://raw.githubusercontent.com/mattmc3/zebrafish/resources/img/benchmark.png)
 
 
 [grml-zshrc]: https://github.com/grml/grml-etc-core/blob/master/etc/zsh/zshrc
