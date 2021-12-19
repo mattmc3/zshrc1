@@ -4,9 +4,9 @@
 # Licenses:
 #   - Zebrafish: MIT (https://github.com/zshzoo/zebrafish/blob/main/LICENSE)
 #   - Oh-My-Zsh: MIT (https://github.com/ohmyzsh/ohmyzsh/blob/master/LICENSE.txt)
-#   - Prezto: MIT (https://github.com/sorin-ionescu/prezto/blob/master/LICENSE)
-#   - Grml: GPL v2 (https://github.com/grml/grml-etc-core/blob/master/etc/zsh/zshrc)
-#   - Zim: MIT (https://github.com/zimfw/zimfw/blob/master/LICENSE)
+#   - Prezto:    MIT (https://github.com/sorin-ionescu/prezto/blob/master/LICENSE)
+#   - Zim:       MIT (https://github.com/zimfw/zimfw/blob/master/LICENSE)
+#   - ZshZoo:    MIT (https://github.com/zshzoo)
 ZF_VERSION="0.6.2"
 
 # Profiling
@@ -56,6 +56,7 @@ alias zf-profile="ZF_PROFILE=1 zsh"
 # https://standards.freedesktop.org/basedir-spec/basedir-spec-latest.html
 # https://wiki.archlinux.org/index.php/XDG_Base_Directory
 # https://wiki.archlinux.org/index.php/XDG_user_directories
+# https://github.com/zshzoo/environment
 #
 if (($zf_features[(Ie)environment])); then
   # XDG
@@ -111,6 +112,7 @@ fi
 #region Zsh Options
 #
 # http://zsh.sourceforge.net/Doc/Release/Options.html
+# https://github.com/zshzoo/setopts
 #
 if (($zf_features[(Ie)zshopts])); then
   # changing directories
@@ -344,6 +346,8 @@ function zf-completion-styles() {
 #
 #region Autoload Functions
 #
+# https://github.com/zshzoo/zfunctions
+#
 function zf-zfunctions() {
   local fndir fnfile
   zstyle -s ':zebrafish:functions' path 'fndir' \
@@ -548,6 +552,7 @@ function zf-termtitle() {
 #region Misc
 #
 # https://github.com/sorin-ionescu/prezto/blob/be61026920c9a0db6d775ec97a002984147b954c/init.zsh#L186-L187
+# https://github.com/ohmyzsh/ohmyzsh/tree/master/plugins/colored-man-pages
 #
 function zf-help() {
   # run-help is great, but it's often masked by an alias to man.
@@ -576,6 +581,8 @@ function zf-colorized-man-pages() {
 #
 #region zshrc.d
 #
+# https://github.com/mattmc3/zshrc.d
+#
 function zf-zshrcd() {
   local confdir f files
   zstyle -s ':zebrafish:zshrc.d' path 'confdir' \
@@ -593,6 +600,8 @@ function zf-zshrcd() {
 
 #
 #region Plugins
+#
+# https://github.com/mattmc3/zsh_unplugged
 #
 function zf-plugins() {
   local repo plugin_name plugin_root plugin_dir initfile initfiles
@@ -644,6 +653,9 @@ function zf-plugins() {
 
 #
 #region Prompt
+#
+# https://starship.rs/
+#
 function zf-prompt() {
   export STARSHIP_CONFIG=${STARSHIP_CONFIG:-~/.config/starship/zebrafish.toml}
   if [[ ! -f $STARSHIP_CONFIG ]]; then
