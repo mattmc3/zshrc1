@@ -1,0 +1,33 @@
+add_newline = false
+
+[character]
+success_symbol = "[%%](purple)"
+error_symbol = "[%%](red)"
+vicmd_symbol = "[❮](bold green)"
+
+[directory]
+style = "blue"
+repo_root_style = "blue"
+truncate_to_repo = false
+truncation_length = 0
+disabled = false
+
+[cmd_duration]
+format = "[$duration](yellow)"
+
+[git_branch]
+style = "bright-black"
+format = "[$branch]($style)"
+
+[git_status]
+style="purple"
+format='([$all_status$ahead_behind]($style)) '
+modified = "*"
+ahead = "⇡${count}"
+diverged = "⇕⇡${ahead_count}⇣${behind_count}"
+behind = "⇣${count}"
+
+[status]
+style = "red"
+format = '[\[$int\]]($style) '
+disabled = false
