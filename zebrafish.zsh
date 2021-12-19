@@ -7,7 +7,7 @@
 #   - Prezto: MIT (https://github.com/sorin-ionescu/prezto/blob/master/LICENSE)
 #   - Grml: GPL v2 (https://github.com/grml/grml-etc-core/blob/master/etc/zsh/zshrc)
 #   - Zim: MIT (https://github.com/zimfw/zimfw/blob/master/LICENSE)
-ZF_VERSION="0.6.1"
+ZF_VERSION="0.6.2"
 
 # Profiling
 # load zprof first thing in case we want to profile performance
@@ -645,10 +645,12 @@ function zf-plugins() {
 #
 #region Prompt
 function zf-prompt() {
-  local STARSHIP_CONFIG=${STARSHIP_CONFIG:-~/.config/starship.toml}
-  [[ -f $STARSHIP_CONFIG ]] || {
-    mkdir -p ${STARSHIP_CONFIG:h} && touch $STARSHIP_CONFIG
-  }
+  local STARSHIP_CONFIG=${STARSHIP_CONFIG:-~/.config/starship/zebrafish.toml}
+  if [[ ! -f $STARSHIP_CONFIG ]]; then
+    mkdir -p ${STARSHIP_CONFIG:h}
+    local tomlurl='https://raw.githubusercontent.com/mattmc3/zebrafish/main/prompt/zebrafish.toml'
+    curl -fsSL $tomlurl -o $STARSHIP_CONFIG
+  fi
   command -v starship &>/dev/null || sh -c "$(curl -fsSL https://starship.rs/install.sh)"
   eval "$(starship init zsh)"
 }
