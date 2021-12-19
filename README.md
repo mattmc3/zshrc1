@@ -12,7 +12,7 @@
      src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/ac/Zebrafisch.jpg/512px-Zebrafisch.jpg">
 </a>
 
-> :zebra: :fish: A small, fast, single Zsh include file for an awesome Zsh base config.
+> A small, fast, single Zsh include file for an awesome Zsh base config. :zebra: :fish:
 
 <br>
 <br>
@@ -38,6 +38,8 @@ everything you need for a full-featured Zsh config, but encompassed in one simpl
 grok Zsh include that will grow with you as you use Zsh.
 
 Feel free to use it as-is, build off it, or fork it and make it entirely your own.
+
+![zebrafish](https://raw.githubusercontent.com/mattmc3/zebrafish/resources/img/zebrafish.png)
 
 ## Features
 
