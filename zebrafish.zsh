@@ -1,5 +1,5 @@
 # Zebrafish
-# > A small, lightning fast, single Zsh include file for an awesome Zsh base config
+# > A lightweight, full-featured, blazing-fast Zsh configuration in just one file. :zebra: :fish:
 # Project Home: https://github.com/zshzoo/zebrafish
 # Licenses:
 #   - Zebrafish: MIT (https://github.com/zshzoo/zebrafish/blob/main/LICENSE)
