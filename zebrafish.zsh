@@ -645,7 +645,7 @@ function zf-plugins() {
 #
 #region Prompt
 function zf-prompt() {
-  local STARSHIP_CONFIG=${STARSHIP_CONFIG:-~/.config/starship/zebrafish.toml}
+  export STARSHIP_CONFIG=${STARSHIP_CONFIG:-~/.config/starship/zebrafish.toml}
   if [[ ! -f $STARSHIP_CONFIG ]]; then
     mkdir -p ${STARSHIP_CONFIG:h}
     local tomlurl='https://raw.githubusercontent.com/mattmc3/zebrafish/main/prompt/zebrafish.toml'
