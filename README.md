@@ -130,7 +130,7 @@ loading plugins, everything loaded after zsh-defer will use it to source your pl
 You can test the speed of your Zsh config for yourself by running the following command:
 
 ```zsh
-for i in $(seq 1 10); do
+for i in $(seq 10); do
   /usr/bin/time zsh -i -c exit
 done
 ```
