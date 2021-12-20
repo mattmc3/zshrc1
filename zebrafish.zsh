@@ -350,7 +350,7 @@ function zf-completion-styles() {
 #
 function zf-zfunctions() {
   local fndir fnfile
-  zstyle -s ':zebrafish:functions' path 'fndir' \
+  zstyle -s ':zebrafish:zfunctions' path 'fndir' \
     || fndir=${ZDOTDIR:-~/.config/zsh}/functions
   [[ -d $fndir ]] || return 1
   fpath+=$fndir
