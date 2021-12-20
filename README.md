@@ -67,7 +67,7 @@ Feel free to use it as-is, build off it, or fork it and make it entirely your ow
 | zshrcd              | Use a `zshrc.d` directory in `$ZDOTDIR` to load config files               |
 | zcompletions        | Use a `completions` directory in `$ZDOTDIR` to add your custom completions |
 | plugins             | Include popular plugins from [zsh-users]                                   |
-| prompt              | Ues the amazing [starship] prompt                                          |
+| prompt              | Use the amazing [starship] prompt                                          |
 | compinit            | Initialize completions                                                     |
 
 ## Plugins
@@ -157,7 +157,7 @@ myplugins=(
 zstyle ':zebrafish:external' plugins $myplugins
 ```
 
-### Use a diferent plugin manager
+### Use a different plugin manager
 
 Zebrafish gives you simplified, and highly performant plugin management, but if you
 want to use something else, simply disable the 'plugins' feature.
