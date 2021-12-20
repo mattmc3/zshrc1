@@ -7,7 +7,7 @@
 #   - Prezto:    MIT (https://github.com/sorin-ionescu/prezto/blob/master/LICENSE)
 #   - Zim:       MIT (https://github.com/zimfw/zimfw/blob/master/LICENSE)
 #   - ZshZoo:    MIT (https://github.com/zshzoo)
-ZF_VERSION="0.6.2"
+ZF_VERSION="0.6.3"
 
 # Profiling
 # load zprof first thing in case we want to profile performance
@@ -30,7 +30,7 @@ alias zf-profile="ZF_PROFILE=1 zsh"
     colorized-man-pages
     zfunctions
     zshrcd
-    completions
+    zcompletions
     plugins
     prompt
     compinit
@@ -365,12 +365,12 @@ function zf-zfunctions() {
 
 
 #
-#region Custom completions
+#region Custom zcompletions
 #
-function zf-completions() {
+function zf-zcompletions() {
   # load additional completions
   local f compdir
-  zstyle -s ':zebrafish:completions' path 'compdir' \
+  zstyle -s ':zebrafish:zcompletions' path 'compdir' \
     || compdir=${ZDOTDIR:-~/.config/zsh}/completions
   [[ -d $compdir ]] || return 1
   fpath+=$compdir
@@ -378,7 +378,7 @@ function zf-completions() {
     source "$f"
   done
 }
-(($zf_features[(Ie)completions])) && zf-completions
+(($zf_features[(Ie)zcompletions])) && zf-zcompletions
 #endregion
 
 
@@ -603,6 +603,15 @@ function zf-zshrcd() {
 #
 # https://github.com/mattmc3/zsh_unplugged
 #
+function zsh-defer() {
+  # wrapper until the romkatv/zsh-defer plugin is loaded
+  $@
+}
+
+function zf-source-plugin() {
+  zsh-defer source $@
+}
+
 function zf-plugins() {
   local repo plugin_name plugin_root plugin_dir initfile initfiles
   zstyle -s ':zebrafish:plugins' path 'plugin_root' \
@@ -644,7 +653,7 @@ function zf-plugins() {
     # source the plugin
     fpath+=$plugin_dir
     [[ -d $plugin_dir/functions ]] && fpath+=$plugin_dir/functions
-    source $initfile
+    zf-source-plugin $initfile
   done
 }
 (($zf_features[(Ie)plugins])) && zf-plugins
@@ -667,6 +676,7 @@ function zf-prompt() {
   eval "$(starship init zsh)"
 }
 (($zf_features[(Ie)prompt])) && zf-prompt
+#endregion
 
 
 #
