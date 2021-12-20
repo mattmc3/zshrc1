@@ -91,7 +91,7 @@ echo 'source ${ZDOTDIR:-~}/.zebrafish.zsh' >> ${ZDOTDIR:-~}/.zshrc
 
 ### Install from the git repository
 
-Grab the Zebrafish file via `curl`, and source it from your `.zshrc`:
+Grab the Zebrafish repo via `git`, and source it from your `.zshrc`:
 
 ```zsh
 git clone https://github.com/mattmc3/zebrafish ${ZDOTDIR:-~/.config/zsh}/plugins/zebrafish
