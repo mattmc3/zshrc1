@@ -12,7 +12,7 @@
      src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/ac/Zebrafisch.jpg/512px-Zebrafisch.jpg">
 </a>
 
-> A lightweight, full-featured, blazing-fast Zsh micro-framework in just one file. :zebra: :fish:
+> A lightweight, full-featured, blazing-fast Zsh micro-framework. :zebra: :fish:
 
 <br>
 <br>
