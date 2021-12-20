@@ -137,7 +137,7 @@ faster. If you have a plugin you don't want to defer, list it before [zsh-defer]
 ```zsh
 # Make a list of the github plugins you want
 myplugins=(
-  # include zsh-defer before any plugins you want load faster
+  # include zsh-defer before other plugins for rapid loading
   romkatv/zsh-defer
   # keep these standard Zebrafish plugins
   zsh-users/zsh-autosuggestions
