@@ -159,12 +159,12 @@ zstyle ':zebrafish:external' plugins $myplugins
 
 ### Use a different plugin manager
 
-Zebrafish gives you simplified, and highly performant plugin management, but if you
-want to use something else, simply disable the 'plugins' feature.
+Zebrafish already comes with a highly performant way to manage plugins, but if you
+prefer to use something else simply disable the 'plugins' feature.
 
 ```zsh
-# disable the plugin feature
-# (you can add other features to this list too)
+# disable the plugins feature
+# (you can disable other features in this list too)
 disable_features=(plugins)
 zstyle ':zebrafish:disable' features $disable_features
 ```
