@@ -4,6 +4,20 @@ Zebrafish is designed to provide a great turnkey experience out-of-the-box, but 
 allow you to customize it to your liking. This document describes the different ways you
 might want to customize your Zebrafish experience.
 
+- [Zebrafish Customization](#zebrafish-customization)
+  - [Disable features](#disable-features)
+  - [Adding plugins](#adding-plugins)
+  - [Paths](#paths)
+    - [History file](#history-file)
+    - [compinit dump file](#compinit-dump-file)
+    - [zshrc.d directory](#zshrcd-directory)
+    - [zfunctions directory](#zfunctions-directory)
+    - [zcompletions directory](#zcompletions-directory)
+  - [Use a different plugin manager](#use-a-different-plugin-manager)
+  - [Use on a server](#use-on-a-server)
+  - [Customizing your prompt](#customizing-your-prompt)
+  - [Using a different prompt](#using-a-different-prompt)
+
 ## Disable features
 
 You can chose to disable certain features by setting the following `zstyle`. Perhaps
