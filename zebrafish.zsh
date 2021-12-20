@@ -7,7 +7,7 @@
 #   - Prezto:    MIT (https://github.com/sorin-ionescu/prezto/blob/master/LICENSE)
 #   - Zim:       MIT (https://github.com/zimfw/zimfw/blob/master/LICENSE)
 #   - ZshZoo:    MIT (https://github.com/zshzoo)
-ZF_VERSION="0.6.3"
+ZF_VERSION="0.7.0"
 
 # Profiling
 # load zprof first thing in case we want to profile performance
