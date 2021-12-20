@@ -121,7 +121,7 @@ You can read more about how to customize your Zebrafish experience
 ## Performance
 
 Zebrafish is blazing fast. In my tests it was 3 times faster than [prezto] and
-nearly 5 times faster to load than [ohmyzsh].
+nearly 5 times faster to load than [oh-my-zsh][ohmyzsh].
 
 Zebrafish achieves much of its performance by being smaller and simpler than the big
 frameworks. It also leverages the [zsh-defer] plugin to get you to a prompt faster. When
