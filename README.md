@@ -186,7 +186,7 @@ zstyle ':zebrafish:disable' features \
 
 ### Customizing your prompt
 
-Zebrafish uses the Starship][starship] prompt. The Starship configuration file is
+Zebrafish uses the [Starship][starship] prompt. The Starship configuration file is
 specified in the `$STARSHIP_CONFIG` variable, which defaults to
 `~/.config/starship/zebrafish.toml`.
 
