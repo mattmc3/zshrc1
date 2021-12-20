@@ -125,14 +125,60 @@ zstyle ':zebrafish:disable' features plugins
 The `$zf_features` variable contains everything that's currently enabled in Zebrafish
 if you want to see the list of what you can disable, or refer to this readme.
 
-### Use on a server
+### Adding plugins
 
-In a server environment, you might not want Zebrafish to try to go out to the internet
-and grab plugins or prompts. You can easily run Zebrafish in an isolated environment
-with the following config:
+Zebrafish gives you a small set of essential plugins, but you will likely want to add
+your own. That's no problem! Zebrafish gives you total control of the plugin list.
+Just set this `zstyle` before sourcing Zebrafish.
+
+**Note** - you'll want to include the [zsh-defer] before any plugins you want to load
+faster. If you have a plugin you don't want to defer, list it before [zsh-defer].
 
 ```zsh
-# disables the features that grab stuff from the web
+# Make a list of the github plugins you want
+myplugins=(
+  # include zsh-defer before any plugins you want load faster
+  romkatv/zsh-defer
+  # keep these standard Zebrafish plugins
+  zsh-users/zsh-autosuggestions
+  zsh-users/zsh-history-substring-search
+  # add new favorites to my plugin list
+  zsh-users/zsh-completions
+  zshzoo/copier
+  peterhurford/up.zsh
+  rupa/z
+  # plugins from other git providers
+  https://gitlab.com/code-stats/code-stats-zsh
+  # always load this one last
+  zdharma-continuum/fast-syntax-highlighting
+)
+
+# assign that list to the appropriate zstyle
+zstyle ':zebrafish:external' plugins $myplugins
+```
+
+### Use a diferent plugin manager
+
+Zebrafish gives you simplified, and highly performanct plugin management, but if you
+want to use something else, simply disable the 'plugins' feature.
+
+```zsh
+# disable the plugin feature
+# (you can add other features to this list too)
+disable_features=(plugins)
+zstyle ':zebrafish:disable' features $disable_features
+```
+
+### Use on a server
+
+Zebrafish is great for use on a server since it's just a single .zsh file. But, in a
+server environment, you might not want Zebrafish to try to go out to the internet
+and grab plugins or the [Starship][starship] prompt. You can easily run Zebrafish in an
+isolated environment by disabling these features:
+
+```zsh
+# disable any features that grab stuff from the web
+# because you might not want that on a server
 zstyle ':zebrafish:disable' features \
   prompt \
   plugins
