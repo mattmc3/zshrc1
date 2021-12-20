@@ -157,6 +157,62 @@ myplugins=(
 zstyle ':zebrafish:external' plugins $myplugins
 ```
 
+### Paths
+
+#### History file
+
+Zebrafish will store your Zsh history file in `$XDG_DATA_HOME/zsh/history`. Many other
+shells like [fish] store data files in separate places from config files.
+
+If you don't prefer this, you can restore your zcompdump file to the Zsh default
+location or wherever else you prefer by setting the `$HISTFILE` variable.
+
+
+```zsh
+HISTFILE=${ZDOTDIR:-~}/.zsh_history
+```
+
+#### compinit dump file
+
+Zebrafish will store your zcompdump file in `$XDG_CACHE_HOME/zsh/zcompdump`. Many other
+shells like [fish] store cache files in separate places from config files.
+
+If you don't prefer this, you can restore your zcompdump file to the Zsh default
+location or wherever else you prefer by setting the `$ZSH_COMPDUMP` variable.
+
+```zsh
+ZSH_COMPDUMP=${ZDOTDIR:-~}/.zcompdump
+```
+
+#### zshrc.d directory
+
+Zebrafish will source config files from `~/.config/zsh/zshrc.d` if it exists. If you
+prefer to store config files in another location, you can set the following `zstyle`:
+
+```zsh
+zstyle ':zebrafish:zshrc.d' path ~/.zconf.d
+```
+
+#### zfunctions directory
+
+Zebrafish will autoload all function files in `~/.config/zsh/functions` if it exists. If
+you prefer to store autoload function files in another location, you can set the
+following `zstyle`:
+
+```zsh
+zstyle ':zebrafish:zfunctions' path ~/.zfunctions
+```
+
+#### zcompletions directory
+
+Zebrafish will source completions files from `~/.config/zsh/completions` if it exists.
+If you prefer to store completion files in another location, you can set the following
+`zstyle`:
+
+```zsh
+zstyle ':zebrafish:zcompletions' path ~/.zcompletions
+```
+
 ### Use a different plugin manager
 
 Zebrafish already comes with a highly performant way to manage plugins, but if you
