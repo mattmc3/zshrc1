@@ -159,7 +159,7 @@ zstyle ':zebrafish:external' plugins $myplugins
 
 ### Use a diferent plugin manager
 
-Zebrafish gives you simplified, and highly performanct plugin management, but if you
+Zebrafish gives you simplified, and highly performant plugin management, but if you
 want to use something else, simply disable the 'plugins' feature.
 
 ```zsh
