@@ -4,7 +4,7 @@ Zebrafish is designed to provide a great turnkey experience out-of-the-box, but 
 allow you to customize it to your liking. This document describes the different ways you
 might want to customize your Zebrafish experience.
 
-### Disable features
+## Disable features
 
 You can chose to disable certain features by setting the following `zstyle`. Perhaps
 you are already using a plugin manager and don't want Zebrafish to load any plugins.
@@ -17,7 +17,7 @@ zstyle ':zebrafish:disable' features plugins
 The `$zf_features` variable contains everything that's currently enabled in Zebrafish
 if you want to see the list of what you can disable, or refer to this readme.
 
-### Adding plugins
+## Adding plugins
 
 Zebrafish gives you a small set of essential plugins, but you will likely want to add
 your own. That's no problem! Zebrafish gives you total control of the plugin list.
@@ -49,9 +49,9 @@ myplugins=(
 zstyle ':zebrafish:external' plugins $myplugins
 ```
 
-### Paths
+## Paths
 
-#### History file
+### History file
 
 Zebrafish will store your Zsh history file in `$XDG_DATA_HOME/zsh/history`. Many other
 shells like [fish] store data files in separate places from config files.
@@ -64,7 +64,7 @@ location or wherever else you prefer by setting the `$HISTFILE` variable.
 HISTFILE=${ZDOTDIR:-~}/.zsh_history
 ```
 
-#### compinit dump file
+### compinit dump file
 
 Zebrafish will store your zcompdump file in `$XDG_CACHE_HOME/zsh/zcompdump`. Many other
 shells like [fish] store cache files in separate places from config files.
@@ -76,7 +76,7 @@ location or wherever else you prefer by setting the `$ZSH_COMPDUMP` variable.
 ZSH_COMPDUMP=${ZDOTDIR:-~}/.zcompdump
 ```
 
-#### zshrc.d directory
+### zshrc.d directory
 
 Zebrafish will source config files from `~/.config/zsh/zshrc.d` if it exists. If you
 prefer to store config files in another location, you can set the following `zstyle`:
@@ -85,7 +85,7 @@ prefer to store config files in another location, you can set the following `zst
 zstyle ':zebrafish:zshrc.d' path ~/.zconf.d
 ```
 
-#### zfunctions directory
+### zfunctions directory
 
 Zebrafish will autoload all function files in `~/.config/zsh/functions` if it exists. If
 you prefer to store autoload function files in another location, you can set the
@@ -95,7 +95,7 @@ following `zstyle`:
 zstyle ':zebrafish:zfunctions' path ~/.zfunctions
 ```
 
-#### zcompletions directory
+### zcompletions directory
 
 Zebrafish will source completions files from `~/.config/zsh/completions` if it exists.
 If you prefer to store completion files in another location, you can set the following
@@ -105,7 +105,7 @@ If you prefer to store completion files in another location, you can set the fol
 zstyle ':zebrafish:zcompletions' path ~/.zcompletions
 ```
 
-### Use a different plugin manager
+## Use a different plugin manager
 
 Zebrafish already comes with a highly performant way to manage plugins, but if you
 prefer to use something else simply disable the 'plugins' feature.
@@ -117,7 +117,7 @@ disable_features=(plugins)
 zstyle ':zebrafish:disable' features $disable_features
 ```
 
-### Use on a server
+## Use on a server
 
 Zebrafish is great for use on a server since it's just a single .zsh file. But, in a
 server environment, you might not want Zebrafish to try to go out to the internet
@@ -132,7 +132,7 @@ zstyle ':zebrafish:disable' features \
   plugins
 ```
 
-### Customizing your prompt
+## Customizing your prompt
 
 Zebrafish uses the [Starship][starship] prompt. The Starship configuration file is
 specified in the `$STARSHIP_CONFIG` variable, which defaults to
@@ -141,7 +141,7 @@ specified in the `$STARSHIP_CONFIG` variable, which defaults to
 You can point `$STARSHIP_CONFIG` to another file, or you can modify the `zebrafish.toml`
 file yourself. Configuration instructions for Starship [can be found here](https://starship.rs/config/).
 
-### Using a different prompt
+## Using a different prompt
 
 If you prefer to use a prompt other than [Starship][starship], you can disable the
 Zebrafish prompt, and include your preferred prompt in the plugins list.
