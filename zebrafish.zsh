@@ -42,6 +42,7 @@ alias zf-profile="ZF_PROFILE=1 zsh"
   typeset -ga zf_plugins
   zstyle -a ':zebrafish:external' plugins 'zf_plugins' || \
     zf_plugins=(
+      romkatv/zsh-defer
       zsh-users/zsh-autosuggestions
       zsh-users/zsh-history-substring-search
       zsh-users/zsh-syntax-highlighting
