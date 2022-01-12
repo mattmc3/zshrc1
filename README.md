@@ -83,8 +83,6 @@ To install using a Zsh plugin manager, add the following to your .zshrc
 - [zgenom]: `zgenom load mattmc3/zshrc1`
 - [znap]: `znap source mattmc3/zshrc1`
 
-Note that when using a plugin manager, you may prefer to turn off zshrc1's built-in
-plugin management with `zstyle ':zshrc1:disable' features plugins`.
 
 [grml-zshrc]: https://github.com/grml/grml-etc-core/blob/master/etc/zsh/zshrc
 [ohmyzsh]: https://github.com/ohmyzsh/ohmyzsh
