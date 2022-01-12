@@ -542,7 +542,7 @@ function zshrc1-compinit() {
     fi
   } &!
 }
-zshrc1-compinit
+[[ ${ZSHRC1_DEFER_COMPINIT:-false} = true ]] || zshrc1-compinit
 #endregion
 
 # done profiling
