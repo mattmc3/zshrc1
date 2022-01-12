@@ -18,7 +18,7 @@ echo 'source ${ZDOTDIR:-~}/.zshrc1' >> ${ZDOTDIR:-~}/.zshrc
 
 zshrc1 is designed to be a portable, lightweight, ultra-fast, Zsh configuration in a
 single file. Equally useful on your desktop machine or on a remote server, zshrc1
-enables many of the useful functionality already built into Zsh without the need for
+enables much of the useful functionality already built into Zsh without the need for
 plugins. And, it's ridiculously fast!
 
 zshrc1's goal is to give you a great starter DIY Zsh experience from a single file.
@@ -31,7 +31,7 @@ and often requires you to pull together functionality already baked into the Zsh
 frameworks you leave behind.
 
 zshrc1 is simpler. Similar to [Grml's .zshrc][grml-zshrc], zshrc1 gives you
-everything you need for a full-featured Zsh config, but encompassed in one simple to
+everything you need for a full-featured Zsh config, but contained in one simple to
 grok Zsh include that will grow with you as you use Zsh.
 
 Feel free to use it as-is, build off it, or fork it and make it entirely your own.
