@@ -36,8 +36,6 @@ grok Zsh include that will grow with you as you use Zsh.
 
 Feel free to use it as-is, build off it, or fork it and make it entirely your own.
 
-![zshrc1](https://raw.githubusercontent.com/mattmc3/zshrc1/resources/img/zshrc1.png)
-
 ## Features
 
 | feature             | description                                                                |
