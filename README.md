@@ -51,7 +51,7 @@ Feel free to use it as-is, build off it, or fork it and make it entirely your ow
 | help                | Enable the Zsh built-in help                                               |
 | colorized-man-pages | Add a splash of color to your man pages                                    |
 | zfunctions          | Use a `functions` directory in `$ZDOTDIR` for your custom Zsh functions    |
-| zshrcd              | Use a `zshrc.d` directory in `$ZDOTDIR` to load config files               |                                        |
+| zshrcd              | Use a `conf.d` directory in `$ZDOTDIR` to load config files                |
 | compinit            | Initialize completions                                                     |
 
 ## Installation
@@ -71,7 +71,7 @@ Grab the zshrc1 repo via `git`, and source it from your `.zshrc`:
 
 ```zsh
 git clone https://github.com/mattmc3/zshrc1 ${ZDOTDIR:-~/.config/zsh}/plugins/zshrc1
-echo 'source ${ZDOTDIR:-~/.config/zsh}/plugins/zshrc1/zshrc1.zsh' >> ${ZDOTDIR:-~}/.zshrc
+echo 'source ${ZDOTDIR:-~/.config/zsh}/plugins/zshrc1/zshrc1.plugin.zsh' >> ${ZDOTDIR:-~}/.zshrc
 ```
 
 ### Install with a Zsh plugin manager
