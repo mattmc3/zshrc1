@@ -6,18 +6,9 @@ charset = utf-8
 end_of_line = lf
 insert_final_newline = true
 trim_trailing_whitespace = true
-indent_style = tab
-indent_size = 4
+indent_style = space
+indent_size = 2
 
 [*.md]
-# don't trim trailing space because its valid markdown syntax
-indent_style = space
+# trailing spaces is valid markdown syntax
 trim_trailing_whitespace = false
-
-[*.zsh]
-indent_style = space
-indent_size = 2
-
-[.zsh*]
-indent_style = space
-indent_size = 2

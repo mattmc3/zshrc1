@@ -1,14 +1,14 @@
 #!/usr/bin/env zsh
 
-# .zsrc1
+# zebrafish.zsh
 # > A powerful starter .zshrc
-# Project Home: https://github.com/mattmc3/zshrc1
-ZSHRC1_VERSION="1.0.0"
+# Project Home: https://github.com/mattmc3/zebrafish
+zebrafish_VERSION="1.0.0"
 
 # Profiling
 # load zprof first thing in case we want to profile performance
-[[ ${ZSHRC1_PROFILE:-0} -eq 0 ]] || zmodload zsh/zprof
-alias zshrc1-profile="ZSHRC1_PROFILE=1 zsh"
+[[ ${zebrafish_PROFILE:-0} -eq 0 ]] || zmodload zsh/zprof
+alias zebrafish-profile="zebrafish_PROFILE=1 zsh"
 
 #region Environment
 #
@@ -182,10 +182,10 @@ zstyle ':completion:*:default' list-prompt '%S%M matches%s'
 
 # Use caching to make completion for commands such as dpkg and apt usable.
 zstyle ':completion::complete:*' use-cache on
-zstyle ':completion::complete:*' cache-path "${XDG_CACHE_HOME:-$HOME/.cache}/zshrc1/zcompcache"
+zstyle ':completion::complete:*' cache-path "${XDG_CACHE_HOME:-$HOME/.cache}/zebrafish/zcompcache"
 
 # Case-insensitive (all), partial-word, and then substring completion.
-if zstyle -t ':zshrc1:module:completion:*' case-sensitive; then
+if zstyle -t ':zebrafish:module:completion:*' case-sensitive; then
   zstyle ':completion:*' matcher-list 'r:|[._-]=* r:|=*' 'l:|=* r:|=*'
   setopt CASE_GLOB
 else
@@ -238,7 +238,7 @@ zstyle ':completion::*:(-command-|export):*' fake-parameters ${${${_comps[(I)-va
 
 # Populate hostname completion. But allow ignoring custom entries from static
 # */etc/hosts* which might be uninteresting.
-zstyle -a ':zshrc1:module:completion:*:hosts' etc-host-ignores '_etc_host_ignores'
+zstyle -a ':zebrafish:module:completion:*:hosts' etc-host-ignores '_etc_host_ignores'
 
 zstyle -e ':completion:*:hosts' hosts 'reply=(
   ${=${=${=${${(f)"$(cat {/etc/ssh/ssh_,~/.ssh/}known_hosts(|2)(N) 2> /dev/null)"}%%[#| ]*}//\]:[0-9]*/ }//,/ }//\[/ }
@@ -513,7 +513,7 @@ zstyle ':completion:*:(ssh|scp|rsync):*:hosts-ipaddr' ignored-patterns '^(<->.<-
 # https://gist.github.com/ctechols/ca1035271ad134841284#gistcomment-2894219
 # https://htr3n.github.io/2018/07/faster-zsh/
 #
-function zshrc1-compinit() {
+function zebrafish-compinit() {
   # run compinit in a smarter, faster way
   emulate -L zsh
   setopt localoptions extendedglob
@@ -544,9 +544,9 @@ function zshrc1-compinit() {
     fi
   } &!
 }
-[[ ${ZSHRC1_DEFER_COMPINIT:-false} = true ]] || zshrc1-compinit
+[[ ${zebrafish_DEFER_COMPINIT:-false} = true ]] || zebrafish-compinit
 #endregion
 
 # done profiling
-[[ ${ZSHRC1_PROFILE:-0} -eq 0 ]] || { unset ZSHRC1_PROFILE && zprof }
+[[ ${zebrafish_PROFILE:-0} -eq 0 ]] || { unset zebrafish_PROFILE && zprof }
 true
