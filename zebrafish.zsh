@@ -426,7 +426,7 @@ _zhome=${ZDOTDIR:-${XDG_CONFIG_HOME:=$HOME/.config}/zsh}
 # Autoload functions directory.
 _zfuncdir=$_zhome/functions
 if [[ -d $_zfuncdir ]]; then
-  fpath=($ZFUNCDIR $fpath)
+  fpath=($_zfuncdir $fpath)
   autoload -Uz $fpath[1]/*(.:t)
 fi
 
