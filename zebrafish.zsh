@@ -415,36 +415,3 @@ function zsh_prompt {
   setopt PROMPT_SUBST    # expand parameters in prompt variables
   autoload -Uz promptinit && promptinit
 }
-
-# Zsh config dir.
-_zhome=${ZDOTDIR:-${XDG_CONFIG_HOME:=$HOME/.config}/zsh}
-
-# Autoload functions directory.
-_zfuncdir=$_zhome/functions
-if [[ -d $_zfuncdir ]]; then
-  fpath=($_zfuncdir $fpath)
-  autoload -Uz $fpath[1]/*(.:t)
-fi
-
-# TODO: plugins
-zebrafish_environment
-zebrafish_history
-zebrafish_directory
-zebrafish_editor
-zebrafish_color
-zebrafish_utility
-zebrafish_completion
-zebrafish_compstyle
-zebrafish_prompt
-
-# Source anything in conf.d.
-for _rcfile in $_zhome/conf.d/*.zsh(N); do
-  source $_rcfile
-done
-
-# Cleanup.
-unset _zhome _zfuncdir _rcfile
-
-# Done profiling.
-[[ ${ZF_PROF:-0} -eq 0 ]] || { unset ZF_PROF && zprof }
-true
