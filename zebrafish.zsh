@@ -174,22 +174,30 @@ function zsh_utility {
 
 ##? zsh_completion - set zsh built-in completion system
 function zsh_completion {
-  # Completion options.
-  setopt COMPLETE_IN_WORD     # Complete from both ends of a word.
-  setopt ALWAYS_TO_END        # Move cursor to the end of a completed word.
-  setopt PATH_DIRS            # Perform path search even on command names with slashes.
-  setopt AUTO_MENU            # Show completion menu on a successive tab press.
-  setopt AUTO_LIST            # Automatically list choices on ambiguous completion.
-  setopt AUTO_PARAM_SLASH     # If completed parameter is a directory, add a trailing slash.
-  setopt EXTENDED_GLOB        # Needed for file modification glob modifiers with compinit.
-  setopt NO_MENU_COMPLETE     # Do not autoselect the first completion entry.
-  setopt NO_FLOW_CONTROL      # Disable start/stop characters in shell editor.
+  local zopts=(
+    # 16.2.2 Completion
+    always_to_end           # Move cursor to the end of a completed word.
+    auto_list               # Automatically list choices on ambiguous completion.
+    auto_menu               # Show completion menu on a successive tab press.
+    auto_param_slash        # If completed parameter is a directory, add a trailing slash.
+    complete_in_word        # Complete from both ends of a word.
+    NO_menu_complete        # Do not autoselect the first completion entry.
+
+    # 16.2.3 Expansion and Globbing
+    extended_glob           # Use extended globbing syntax.
+    glob_dots               # Don't hide dotfiles from glob patterns.
+
+    # 16.2.6 Input/Output
+    path_dirs               # Perform path search even on command names with slashes.
+    NO_flow_control         # Disable start/stop characters in shell editor.
+  )
+  setopt $zopts
 
   # Allow custom completions directory.
-  fpath=(${ZDOTDIR:-${XDG_CONFIG_HOME:=$HOME/.config}}/completions(/N) $fpath)
+  fpath=(${ZDOTDIR:-${XDG_CONFIG_HOME:-$HOME/.config}/zsh}/completions(/N) $fpath)
 
   # Zsh compdump file.
-  : ${ZSH_COMPDUMP:=${XDG_CACHE_HOME:=$HOME/.cache}/zsh/zcompdump}
+  : ${ZSH_COMPDUMP:=${XDG_CACHE_HOME:-$HOME/.cache}/zsh/zcompdump}
   [[ -d $ZSH_COMPDUMP:h ]] || mkdir -p $ZSH_COMPDUMP:h
 
   # Load and initialize the completion system ignoring insecure directories with a
