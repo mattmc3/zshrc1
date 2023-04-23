@@ -5,16 +5,7 @@
 
 > A powerful starter .zshrc
 
-## TLDR;
-
-Download Zebrafish and source it from your `.zshrc`:
-
-```zsh
-curl -fsSL https://raw.githubusercontent.com/mattmc3/zebrafish/main/zebrafish.zsh -o ${ZDOTDIR:-~}/zebrafish.zsh
-echo 'source ${ZDOTDIR:-~}/zebrafish.zsh' >> ${ZDOTDIR:-~}/.zshrc
-```
-
-## Details
+## Description
 
 Zebrafish is designed to be a portable, lightweight, ultra-fast, Zsh configuration in a
 single file. Equally useful on your desktop machine or on a remote server, Zebrafish
@@ -42,36 +33,44 @@ Feel free to use it as-is, build off it, or fork it and make it entirely your ow
 - Use a `functions` directory in `$ZDOTDIR` for your custom Zsh functions
 - Use a `plugins` directory in `$ZDOTDIR` for your custom Zsh plugins
 
-| plugins             | description                                        |
-| ------------------- | -------------------------------------------------- |
-| environment         | Set common environment variables                   |
-| history             | Better Zsh history settings than the defaults      |
-| directory           | Set directory options and define directory aliases |
-| editor              | Zsh keybindings and ZLE config                     |
-| color               | Add a splash of color to your shell                |
-| utility             | Add Zsh utilities                                  |
-| completion          | Initialize completions                             |
-| compstyle           | Add zstyle completion styles                       |
-| prompt              | Initialize Zsh prompt                              |
+| zsh init functions  | description                                                   |
+| ------------------- | ------------------------------------------------------------- |
+| zsh_environment     | set common zsh environment variables                          |
+| zsh_history         | set zsh history options and variables                         |
+| zsh_options         | set common zsh options                                        |
+| zsh_color           | setup color for built-in utilities                            |
+| zsh_utility         | setup zsh built-in utilities                                  |
+| zsh_completion      | set zsh built-in completion system                            |
+| zsh_compstyle       | set zstyle completion styles                                  |
+| zsh_prompt          | set zsh prompt                                                |
+| zsh_plugins         | setup zsh plugins                                             |
+| zsh_confd           | use a Fish-like conf.d directory for sourcing configs         |
+| zsh_funcdir         | use a Fish-like functions directory for lazy-loaded functions |
 
 ## Installation
 
-### Install as a single file
-
-Grab the Zebrafish file via `curl`, and source it from your `.zshrc`:
+Clone Zebrafish and source it from your `.zshrc`:
 
 ```zsh
-curl -fsSL https://raw.githubusercontent.com/mattmc3/zebrafish/main/zebrafish.zsh -o ${ZDOTDIR:-~}/zebrafish.zsh
-echo 'source ${ZDOTDIR:-~}/zebrafish.zsh' >> ${ZDOTDIR:-~}/.zshrc
+git clone https://github.com/mattmc3/zebrafish ${ZDOTDIR:-~}/.zebrafish
 ```
 
-### Install from the git repository
-
-Grab the Zebrafish repo via `git`, and source it from your `.zshrc`:
+Or download a single Zebrafish file and make it your own.
 
 ```zsh
-git clone https://github.com/mattmc3/zebrafish ${ZDOTDIR:-~/.config/zsh}/plugins/zebrafish
-echo 'source ${ZDOTDIR:-~/.config/zsh}/plugins/zebrafish/zebrafish.plugin.zsh' >> ${ZDOTDIR:-~}/.zshrc
+curl -fsSL https://raw.githubusercontent.com/mattmc3/zebrafish/main/zebrafish.zsh -o ${ZDOTDIR:-~}/.zebrafish.zsh
+```
+
+Next, call whatever Zsh init functions you want from Zebrafish in your `.zshrc`:
+
+```zsh
+# .zshrc
+source ${ZDOTDIR:-~}/.zebrafish.zsh
+zsh_environment
+zsh_history
+zsh_utility
+zsh_prompt 'fade'
+zsh_completion
 ```
 
 ### Install with a Zsh plugin manager
