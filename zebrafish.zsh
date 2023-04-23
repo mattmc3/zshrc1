@@ -293,7 +293,7 @@ function zsh_prompt {
 ##? zsh_confd - use a Fish-like conf.d directory for sourcing configs.
 function zsh_confd {
   local zfile
-  for zfile in $__zsh_config_dir/conf.d/*.zsh(N); do
+  for zfile in $ZDOTDIR/conf.d/*.zsh(N); do
     [[ $zfile:t != '~'* ]] || continue
     . $zfile
   done
@@ -301,7 +301,7 @@ function zsh_confd {
 
 ##? zsh_funcdir - use a Fish-like functions directory for lazy-loaded functions.
 function zsh_funcdir {
-  local fn fndir funcdir=$__zsh_config_dir/functions
+  local fn fndir funcdir=$ZDOTDIR/functions
   [[ -d $funcdir ]] || return 1
   for fndir in $funcdir(/FN) $funcdir/*(/FN); do
     fpath=($fndir $fpath)
