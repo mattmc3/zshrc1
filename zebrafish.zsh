@@ -285,9 +285,9 @@ function zsh_compstyle {
 
 ##? zsh_prompt - set zsh prompt
 function zsh_prompt {
-  # Zsh prompt options.
-  setopt PROMPT_SUBST    # expand parameters in prompt variables
+  setopt PROMPT_SUBST  # expand parameters in prompt variables
   autoload -Uz promptinit && promptinit
+  (( ! $# )) || prompt $@
 }
 
 ##? zsh_confd - use a Fish-like conf.d directory for sourcing configs.
