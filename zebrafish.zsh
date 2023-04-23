@@ -5,6 +5,7 @@
 # Project Home: https://github.com/mattmc3/zebrafish
 ZEBRAFISH_VERSION="2.0.0"
 
+##? zsh_environment - set common zsh environment variables
 function zsh_environment {
   # XDG base dir support.
   export XDG_CONFIG_HOME=${XDG_CONFIG_HOME:-~/.config}
@@ -35,6 +36,7 @@ function zsh_environment {
   export KEYTIMEOUT=1
 }
 
+##? zsh_history - set zsh history options and variables
 function zsh_history {
   setopt APPEND_HISTORY          # Append to history file.
   setopt EXTENDED_HISTORY        # Write the history file in the ':start:elapsed;command' format.
@@ -63,6 +65,48 @@ function zsh_history {
   alias hist='fc -li'
 }
 
+##? zsh_options - set better zsh options than the defaults
+function zsh_options {
+  local zopts=(
+    # 16.2.1 Changing Directories
+    auto_cd                 # if a command isn't valid, but is a directory, cd to that dir.
+    auto_pushd              # make cd push the old directory onto the dirstack.
+    cdable_vars             # change directory to a path stored in a variable.
+    pushd_ignore_dups       # don’t push multiple copies of the same directory onto the dirstack.
+    pushd_minus             # exchanges meanings of +/- when navigating the dirstack.
+    pushd_silent            # do not print the directory stack after pushd or popd.
+    pushd_to_home           # push to home directory when no argument is given.
+
+    # 16.2.3 Expansion and Globbing
+    extended_glob           # Use extended globbing syntax.
+    glob_dots               # Don't hide dotfiles from glob patterns.
+
+    # 16.2.6 Input/Output
+    interactive_comments    # Enable comments in interactive shell.
+    rc_quotes               # Allow 'Hitchhiker''s Guide' instead of 'Hitchhiker'\''s Guide'.
+    NO_clobber              # Don't overwrite files with >. Use >| to bypass.
+    NO_mail_warning         # Don't print a warning if a mail file was accessed.
+    NO_rm_star_silent       # Ask for confirmation for `rm *' or `rm path/*'
+
+    # 16.2.7 Job Control
+    auto_resume             # Attempt to resume existing job before creating a new process.
+    long_list_jobs          # List jobs in the long format by default.
+    notify                  # Report status of background jobs immediately.
+    NO_bg_nice              # Don't run all background jobs at a lower priority.
+    NO_check_jobs           # Don't report on jobs when shell exit.
+    NO_hup                  # Don't kill jobs on shell exit.
+
+    # 16.2.9 Scripts and Functions
+    multios                 # Write to multiple descriptors.
+
+    # 16.2.12 Zle
+    combining_chars         # Combine 0-len chars with base chars (eg: accents).
+    NO_beep                 # Be quiet.
+  )
+  setopt $zopts
+}
+
+##? zsh_color - setup color for built-in utilities
 function zsh_color {
   local prefix cache
 
@@ -99,6 +143,7 @@ function zsh_color {
   export LESS_TERMCAP_me=$'\e[0m'          # me:=end modes
 }
 
+##? zsh_utility - setup zsh built-in utilities
 function zsh_utility {
   # General options.
   setopt EXTENDED_GLOB         # Use more awesome globbing features.
@@ -129,6 +174,7 @@ function zsh_utility {
   alias help=run-help
 }
 
+##? zsh_completion - set zsh built-in completion system
 function zsh_completion {
   # Completion options.
   setopt COMPLETE_IN_WORD     # Complete from both ends of a word.
@@ -169,6 +215,7 @@ function zsh_completion {
   } &!
 }
 
+##? zsh_compstyle - set zstyle completion styles
 function zsh_compstyle {
   # Defaults.
   zstyle ':completion:*:default' list-colors ${(s.:.)LS_COLORS}
@@ -238,8 +285,31 @@ function zsh_compstyle {
   zstyle ':completion:*:man:*'      menu yes select
 }
 
+##? zsh_prompt - set zsh prompt
 function zsh_prompt {
   # Zsh prompt options.
   setopt PROMPT_SUBST    # expand parameters in prompt variables
   autoload -Uz promptinit && promptinit
+}
+
+##? zsh_confd - use a Fish-like conf.d directory for sourcing configs.
+function zsh_confd {
+  local zfile
+  for zfile in $__zsh_config_dir/conf.d/*.zsh(N); do
+    [[ $zfile:t != '~'* ]] || continue
+    . $zfile
+  done
+}
+
+##? zsh_funcdir - use a Fish-like functions directory for lazy-loaded functions.
+function zsh_funcdir {
+  local fn fndir funcdir=$__zsh_config_dir/functions
+  [[ -d $funcdir ]] || return 1
+  for fndir in $funcdir(/FN) $funcdir/*(/FN); do
+    fpath=($fndir $fpath)
+  done
+  for fn in $funcdir/*(.N) $funcdir/*/*(.N); do
+    [[ $fn:t != '_'* ]] || continue
+    autoload -Uz $fn:t
+  done
 }
