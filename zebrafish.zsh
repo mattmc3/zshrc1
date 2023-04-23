@@ -5,11 +5,7 @@
 # Project Home: https://github.com/mattmc3/zebrafish
 ZEBRAFISH_VERSION="2.0.0"
 
-# Load zprof first thing in case we want to profile performance.
-[[ ${ZF_PROF:-0} -eq 0 ]] || zmodload zsh/zprof
-alias zf-prof="ZF_PROF=1 zsh"
-
-function zebrafish_environment {
+function zsh_environment {
   # XDG base dir support.
   export XDG_CONFIG_HOME=${XDG_CONFIG_HOME:-~/.config}
   export XDG_CACHE_HOME=${XDG_CACHE_HOME:-~/.cache}
@@ -39,7 +35,7 @@ function zebrafish_environment {
   export KEYTIMEOUT=1
 }
 
-function zebrafish_history {
+function zsh_history {
   setopt APPEND_HISTORY          # Append to history file.
   setopt EXTENDED_HISTORY        # Write the history file in the ':start:elapsed;command' format.
   setopt NO_HIST_BEEP            # Don't beep when attempting to access a missing history entry.
@@ -67,7 +63,7 @@ function zebrafish_history {
   alias hist='fc -li'
 }
 
-function zebrafish_directory {
+function zsh_directory {
   setopt AUTO_CD              # If a command isn't valid, but is a directory, cd to that dir.
   setopt AUTO_PUSHD           # Make cd push the old directory onto the dirstack.
   setopt PUSHD_IGNORE_DUPS    # Don’t push multiple copies of the same directory onto the dirstack.
@@ -93,7 +89,7 @@ function zebrafish_directory {
   done
 }
 
-function zebrafish_editor {
+function zsh_editor {
   [[ "$TERM" != 'dumb' ]] || return 1
 
   setopt NO_FLOW_CONTROL    # Allow the usage of ^Q/^S in the context of zsh.
@@ -239,7 +235,7 @@ function zebrafish_editor {
   bindkey -e
 }
 
-function zebrafish_color {
+function zsh_color {
   local prefix cache
 
   # Cache results of running dircolors for 20 hours, so it should almost
@@ -275,7 +271,7 @@ function zebrafish_color {
   export LESS_TERMCAP_me=$'\e[0m'          # me:=end modes
 }
 
-function zebrafish_utility {
+function zsh_utility {
   # General options.
   setopt EXTENDED_GLOB         # Use more awesome globbing features.
   setopt GLOB_DOTS             # Include dotfiles when globbing.
@@ -305,7 +301,7 @@ function zebrafish_utility {
   alias help=run-help
 }
 
-function zebrafish_completion {
+function zsh_completion {
   # Completion options.
   setopt COMPLETE_IN_WORD     # Complete from both ends of a word.
   setopt ALWAYS_TO_END        # Move cursor to the end of a completed word.
@@ -345,7 +341,7 @@ function zebrafish_completion {
   } &!
 }
 
-function zebrafish_compstyle {
+function zsh_compstyle {
   # Defaults.
   zstyle ':completion:*:default' list-colors ${(s.:.)LS_COLORS}
   zstyle ':completion:*:default' list-prompt '%S%M matches%s'
@@ -414,7 +410,7 @@ function zebrafish_compstyle {
   zstyle ':completion:*:man:*'      menu yes select
 }
 
-function zebrafish_prompt {
+function zsh_prompt {
   # Zsh prompt options.
   setopt PROMPT_SUBST    # expand parameters in prompt variables
   autoload -Uz promptinit && promptinit
