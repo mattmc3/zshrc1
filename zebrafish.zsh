@@ -51,31 +51,34 @@ function zsh_environment {
 
 ##? zsh_history - set zsh history options and variables
 function zsh_history {
-  setopt APPEND_HISTORY          # Append to history file.
-  setopt EXTENDED_HISTORY        # Write the history file in the ':start:elapsed;command' format.
-  setopt NO_HIST_BEEP            # Don't beep when attempting to access a missing history entry.
-  setopt HIST_EXPIRE_DUPS_FIRST  # Expire a duplicate event first when trimming history.
-  setopt HIST_FIND_NO_DUPS       # Don't display a previously found event.
-  setopt HIST_IGNORE_ALL_DUPS    # Delete an old recorded event if a new event is a duplicate.
-  setopt HIST_IGNORE_DUPS        # Don't record an event that was just recorded again.
-  setopt HIST_IGNORE_SPACE       # Don't record an event starting with a space.
-  setopt HIST_NO_STORE           # Don't store history commands.
-  setopt HIST_REDUCE_BLANKS      # Remove extra blanks from commands added to the history list.
-  setopt HIST_SAVE_NO_DUPS       # Don't write a duplicate event to the history file.
-  setopt HIST_VERIFY             # Don't execute immediately upon history expansion.
-  setopt INC_APPEND_HISTORY      # Write to the history file immediately, not when the shell exits.
-  setopt NO_SHARE_HISTORY        # Don't share history between all sessions.
+  # References:
+  # - https://github.com/sorin-ionescu/prezto/tree/master/modules/history
+  local histopts=(
+    # 16.2.4 History        - https://zsh.sourceforge.io/Doc/Release/Options.html#History
+    bang_hist               # Treat the '!' character specially during expansion.
+    extended_history        # Write the history file in the ':start:elapsed;command' format.
+    hist_expire_dups_first  # Expire a duplicate event first when trimming history.
+    hist_find_no_dups       # Do not display a previously found event.
+    hist_ignore_all_dups    # Delete an old recorded event if a new event is a duplicate.
+    hist_ignore_dups        # Do not record an event that was just recorded again.
+    hist_ignore_space       # Do not record an event starting with a space.
+    hist_reduce_blanks      # Remove extra blanks from commands added to the history list.
+    hist_save_no_dups       # Do not write a duplicate event to the history file.
+    hist_verify             # Do not execute immediately upon history expansion.
+    inc_append_history      # Write to the history file immediately, not when the shell exits.
+    NO_hist_beep            # Don't beep when accessing non-existent history.
+    NO_share_history        # Don't share history between all sessions.
+  )
+  setopt $histopts
 
   # $HISTFILE belongs in the data home, not with zsh configs
   HISTFILE=${XDG_DATA_HOME:=$HOME/.local/share}/zsh/history
-  [[ -f $HISTFILE ]] || { mkdir -p $HISTFILE:h && touch $HISTFILE }
+  [[ -d $HISTFILE:h ]] || mkdir -p $HISTFILE:h
 
-  # you can set $SAVEHIST and $HISTSIZE to anything greater than the ZSH defaults
+  # You can set $SAVEHIST and $HISTSIZE to anything greater than the ZSH defaults
   # (1000 and 2000 respectively), but if not we make them way bigger.
-  [[ $SAVEHIST -gt 1000 ]] || SAVEHIST=20000
-  [[ $HISTSIZE -gt 2000 ]] || HISTSIZE=100000
-
-  alias hist='fc -li'
+  [[ $SAVEHIST -gt 1000 ]] || SAVEHIST=10000
+  [[ $HISTSIZE -gt 2000 ]] || HISTSIZE=10000
 }
 
 ##? zsh_options - set better zsh options than the defaults
