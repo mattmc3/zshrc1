@@ -7,11 +7,21 @@ ZEBRAFISH_VERSION="2.0.0"
 
 ##? zsh_environment - set common zsh environment variables
 function zsh_environment {
+  # References
+  # - https://github.com/sorin-ionescu/prezto/blob/master/runcoms/zprofile
+
   # XDG base dir support.
-  export XDG_CONFIG_HOME=${XDG_CONFIG_HOME:-~/.config}
-  export XDG_CACHE_HOME=${XDG_CACHE_HOME:-~/.cache}
-  export XDG_DATA_HOME=${XDG_DATA_HOME:-~/.local/share}
-  export XDG_RUNTIME_DIR=${XDG_RUNTIME_DIR:-~/.xdg}
+  export XDG_CONFIG_HOME=${XDG_CONFIG_HOME:-$HOME/.config}
+  export XDG_CACHE_HOME=${XDG_CACHE_HOME:-$HOME/.cache}
+  export XDG_DATA_HOME=${XDG_DATA_HOME:-$HOME/.local/share}
+  export XDG_STATE_HOME=${XDG_STATE_HOME:-$HOME/.local/state}
+  export XDG_RUNTIME_DIR=${XDG_RUNTIME_DIR:-$HOME/.xdg}
+
+  # Ensure XDG dirs exist.
+  local xdgdir
+  for xdgdir in XDG_{CONFIG,CACHE,DATA,STATE}_HOME XDG_RUNTIME_DIR; do
+    [[ -e ${(P)xdgdir} ]] || mkdir -p ${(P)xdgdir}
+  done
 
   # Editors
   export EDITOR=${EDITOR:-vim}
@@ -20,6 +30,12 @@ function zsh_environment {
 
   # Less
   export LESS=${LESS:-'-g -i -M -R -S -w -z-4'}
+
+  # Set the Less input preprocessor.
+  # Try both `lesspipe` and `lesspipe.sh` as either might exist on a system.
+  if [[ -z "$LESSOPEN" ]] && (( $#commands[(i)lesspipe(|.sh)] )); then
+    export LESSOPEN="| /usr/bin/env $commands[(i)lesspipe(|.sh)] %s 2>&-"
+  fi
 
   # Browser
   if [[ "$OSTYPE" == darwin* ]]; then
@@ -31,9 +47,6 @@ function zsh_environment {
 
   # use `< file` to quickly view the contents of any file.
   export READNULLCMD=${READNULLCMD:-$PAGER}
-
-  # Remove lag
-  export KEYTIMEOUT=1
 }
 
 ##? zsh_history - set zsh history options and variables
