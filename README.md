@@ -1,7 +1,7 @@
 # Zebrafish
 
 [![MIT License](https://img.shields.io/badge/license-MIT-007EC7.svg)](/LICENSE)
-![version](https://img.shields.io/badge/version-v2.0.0-orange)
+![version](https://img.shields.io/badge/version-v3.0.0-orange)
 
 > A powerful starter .zshrc
 
@@ -10,7 +10,7 @@
 Zebrafish is designed to be a portable, lightweight, ultra-fast, Zsh configuration in a
 single file. Equally useful on your desktop machine or on a remote server, Zebrafish
 enables much of the useful functionality already built into Zsh without the need for
-plugins. And, it's ridiculously fast!
+frameworks. And, it's ridiculously fast!
 
 Zebrafish's goal is to give you a great starter DIY Zsh experience from a single file.
 Other full Zsh Frameworks like [Oh-My-Zsh][ohmyzsh] and [Prezto][prezto] are nice if
@@ -29,23 +29,17 @@ Feel free to use it as-is, build off it, or fork it and make it entirely your ow
 
 ## Features
 
-- Use a `conf.d` directory in `$ZDOTDIR` to load runcom config files
-- Use a `functions` directory in `$ZDOTDIR` for your custom Zsh functions
-- Use a `plugins` directory in `$ZDOTDIR` for your custom Zsh plugins
-
-| zsh init functions  | description                                                   |
-| ------------------- | ------------------------------------------------------------- |
-| zsh_environment     | set common zsh environment variables                          |
-| zsh_history         | set zsh history options and variables                         |
-| zsh_options         | set common zsh options                                        |
-| zsh_color           | setup color for built-in utilities                            |
-| zsh_utility         | setup zsh built-in utilities                                  |
-| zsh_completion      | set zsh built-in completion system                            |
-| zsh_compstyle       | set zstyle completion styles                                  |
-| zsh_prompt          | set zsh prompt                                                |
-| zsh_plugins         | setup zsh plugins                                             |
-| zsh_confd           | use a Fish-like conf.d directory for sourcing configs         |
-| zsh_funcdir         | use a Fish-like functions directory for lazy-loaded functions |
+- Use a Fish-like `conf.d` directory in `$ZDOTDIR` to load runcom config files
+- Use a Fish-like `functions` directory in `$ZDOTDIR` for your custom Zsh functions
+- Use a Fish-like `completions` directory in `$ZDOTDIR` for your custom Zsh completions
+- set common zsh environment variables
+- set common zsh options
+- set zsh history options and variables
+- colorize built-in utilities
+- utilize built-in Zsh utilities
+- set zsh built-in completion system
+- set zstyle completion styles
+- set zsh prompt
 
 ## Installation
 
@@ -61,16 +55,11 @@ Or download a single Zebrafish file and make it your own.
 curl -fsSL https://raw.githubusercontent.com/mattmc3/zebrafish/main/zebrafish.zsh -o ${ZDOTDIR:-~}/.zebrafish.zsh
 ```
 
-Next, call whatever Zsh init functions you want from Zebrafish in your `.zshrc`:
+Next, source Zebrafish in your `.zshrc`:
 
 ```zsh
 # .zshrc
 source ${ZDOTDIR:-~}/.zebrafish.zsh
-zsh_environment
-zsh_history
-zsh_utility
-zsh_prompt 'fade'
-zsh_completion
 ```
 
 ### Install with a Zsh plugin manager

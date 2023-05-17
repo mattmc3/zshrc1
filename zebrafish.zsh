@@ -1,204 +1,29 @@
-#!/usr/bin/env zsh
-
 # zebrafish.zsh
 # > A powerful starter .zshrc
 # Project Home: https://github.com/mattmc3/zebrafish
-ZEBRAFISH_VERSION="2.0.0"
 
-##? zsh_environment - set common zsh environment variables
-function zsh_environment {
-  # References
-  # - https://github.com/sorin-ionescu/prezto/blob/master/runcoms/zprofile
+# Init Zebrafish
+() {
+  typeset -g ZEBRAFISH_VERSION="3.0.0"
+  export __zsh_config_dir=${ZDOTDIR:-${XDG_CONFIG_HOME:-~/.config}/zsh}
+  export __zsh_user_data_dir=${XDG_DATA_HOME:-~/.local/share}/zsh
+  export __zsh_cache_dir=${XDG_CACHE_HOME:-~/.cache}/zsh
 
-  # XDG base dir support.
-  export XDG_CONFIG_HOME=${XDG_CONFIG_HOME:-$HOME/.config}
-  export XDG_CACHE_HOME=${XDG_CACHE_HOME:-$HOME/.cache}
-  export XDG_DATA_HOME=${XDG_DATA_HOME:-$HOME/.local/share}
-  export XDG_STATE_HOME=${XDG_STATE_HOME:-$HOME/.local/state}
-  export XDG_RUNTIME_DIR=${XDG_RUNTIME_DIR:-$HOME/.xdg}
+  typeset -g REPO_HOME
+  zstyle -s ':zebrafish:plugin' repo_home 'repo_home' ||
+    REPO_HOME=${XDG_CACHE_HOME:-~/.cache}/repos
 
-  # Ensure XDG dirs exist.
-  local xdgdir
-  for xdgdir in XDG_{CONFIG,CACHE,DATA,STATE}_HOME XDG_RUNTIME_DIR; do
-    [[ -e ${(P)xdgdir} ]] || mkdir -p ${(P)xdgdir}
+  local dir
+  for dir in $__zsh_user_data_dir $__zsh_config_dir $__zsh_cache_dir; do
+    [[ -d "$dir" ]] || mkdir -p $dir
   done
-
-  # Editors
-  export EDITOR=${EDITOR:-vim}
-  export VISUAL=${VISUAL:-nano}
-  export PAGER=${PAGER:-less}
-
-  # Less
-  export LESS=${LESS:-'-g -i -M -R -S -w -z-4'}
-
-  # Set the Less input preprocessor.
-  # Try both `lesspipe` and `lesspipe.sh` as either might exist on a system.
-  if [[ -z "$LESSOPEN" ]] && (( $#commands[(i)lesspipe(|.sh)] )); then
-    export LESSOPEN="| /usr/bin/env $commands[(i)lesspipe(|.sh)] %s 2>&-"
-  fi
-
-  # Browser
-  if [[ "$OSTYPE" == darwin* ]]; then
-    export BROWSER=${BROWSER:-open}
-  fi
-
-  # Regional settings
-  export LANG=${LANG:-en_US.UTF-8}
-
-  # use `< file` to quickly view the contents of any file.
-  export READNULLCMD=${READNULLCMD:-$PAGER}
 }
 
-##? zsh_history - set zsh history options and variables
-function zsh_history {
-  # References:
-  # - https://github.com/sorin-ionescu/prezto/tree/master/modules/history
-  local histopts=(
-    # 16.2.4 History        - https://zsh.sourceforge.io/Doc/Release/Options.html#History
-    bang_hist               # Treat the '!' character specially during expansion.
-    extended_history        # Write the history file in the ':start:elapsed;command' format.
-    hist_expire_dups_first  # Expire a duplicate event first when trimming history.
-    hist_find_no_dups       # Do not display a previously found event.
-    hist_ignore_all_dups    # Delete an old recorded event if a new event is a duplicate.
-    hist_ignore_dups        # Do not record an event that was just recorded again.
-    hist_ignore_space       # Do not record an event starting with a space.
-    hist_reduce_blanks      # Remove extra blanks from commands added to the history list.
-    hist_save_no_dups       # Do not write a duplicate event to the history file.
-    hist_verify             # Do not execute immediately upon history expansion.
-    inc_append_history      # Write to the history file immediately, not when the shell exits.
-    NO_hist_beep            # Don't beep when accessing non-existent history.
-    NO_share_history        # Don't share history between all sessions.
-  )
-  setopt $histopts
-
-  # $HISTFILE belongs in the data home, not with zsh configs
-  HISTFILE=${XDG_DATA_HOME:=$HOME/.local/share}/zsh/history
-  [[ -d $HISTFILE:h ]] || mkdir -p $HISTFILE:h
-
-  # You can set $SAVEHIST and $HISTSIZE to anything greater than the ZSH defaults
-  # (1000 and 2000 respectively), but if not we make them way bigger.
-  [[ $SAVEHIST -gt 1000 ]] || SAVEHIST=10000
-  [[ $HISTSIZE -gt 2000 ]] || HISTSIZE=10000
-}
-
-##? zsh_options - set better zsh options than the defaults
-function zsh_options {
-  local zopts=(
-    # 16.2.1 Changing Directories
-    auto_cd                 # if a command isn't valid, but is a directory, cd to that dir.
-    auto_pushd              # make cd push the old directory onto the dirstack.
-    cdable_vars             # change directory to a path stored in a variable.
-    pushd_ignore_dups       # don’t push multiple copies of the same directory onto the dirstack.
-    pushd_minus             # exchanges meanings of +/- when navigating the dirstack.
-    pushd_silent            # do not print the directory stack after pushd or popd.
-    pushd_to_home           # push to home directory when no argument is given.
-
-    # 16.2.3 Expansion and Globbing
-    extended_glob           # Use extended globbing syntax.
-    glob_dots               # Don't hide dotfiles from glob patterns.
-
-    # 16.2.6 Input/Output
-    interactive_comments    # Enable comments in interactive shell.
-    rc_quotes               # Allow 'Hitchhiker''s Guide' instead of 'Hitchhiker'\''s Guide'.
-    NO_clobber              # Don't overwrite files with >. Use >| to bypass.
-    NO_mail_warning         # Don't print a warning if a mail file was accessed.
-    NO_rm_star_silent       # Ask for confirmation for `rm *' or `rm path/*'
-
-    # 16.2.7 Job Control
-    auto_resume             # Attempt to resume existing job before creating a new process.
-    long_list_jobs          # List jobs in the long format by default.
-    notify                  # Report status of background jobs immediately.
-    NO_bg_nice              # Don't run all background jobs at a lower priority.
-    NO_check_jobs           # Don't report on jobs when shell exit.
-    NO_hup                  # Don't kill jobs on shell exit.
-
-    # 16.2.9 Scripts and Functions
-    multios                 # Write to multiple descriptors.
-
-    # 16.2.12 Zle
-    combining_chars         # Combine 0-len chars with base chars (eg: accents).
-    NO_beep                 # Be quiet.
-  )
-  setopt $zopts
-}
-
-##? zsh_color - setup color for built-in utilities
-function zsh_color {
-  local prefix cache
-
-  # Cache results of running dircolors for 20 hours, so it should almost
-  # always regenerate the first time a shell is opened each day.
-  for prefix in '' g; do
-    if (( $+commands[${prefix}dircolors] )); then
-      local dircolors_cache=${XDG_CACHE_HOME:=$HOME/.cache}/zebrafish/${prefix}dircolors.zsh
-      mkdir -p ${dircolors_cache:h}
-      local cache=($dircolors_cache(Nmh-20))
-
-      (( $#cache )) || ${prefix}dircolors --sh >| $dircolors_cache
-      source "${dircolors_cache}"
-      alias ${prefix}ls="${aliases[${prefix}ls]:-${prefix}ls} --group-directories-first --color=auto"
-    fi
-  done
-
-  if [[ "$OSTYPE" == darwin* ]]; then
-    export CLICOLOR=1
-    alias ls="${aliases[ls]:-ls} -G"
-  fi
-
-  export LS_COLORS=${LS_COLORS:-'di=34:ln=35:so=32:pi=33:ex=31:bd=36;01:cd=33;01:su=31;40;07:sg=36;40;07:tw=32;40;07:ow=33;40;07:'}
-  export LSCOLORS=${LSCOLORS:-exfxcxdxbxGxDxabagacad}
-  alias grep="${aliases[grep]:-grep} --color=auto"
-
-  # Show man pages in color.
-  export LESS_TERMCAP_mb=$'\e[01;34m'      # mb:=start blink-mode (bold,blue)
-  export LESS_TERMCAP_md=$'\e[01;34m'      # md:=start bold-mode (bold,blue)
-  export LESS_TERMCAP_so=$'\e[00;47;30m'   # so:=start standout-mode (white bg, black fg)
-  export LESS_TERMCAP_us=$'\e[04;35m'      # us:=start underline-mode (underline magenta)
-  export LESS_TERMCAP_se=$'\e[0m'          # se:=end standout-mode
-  export LESS_TERMCAP_ue=$'\e[0m'          # ue:=end underline-mode
-  export LESS_TERMCAP_me=$'\e[0m'          # me:=end modes
-}
-
-##? zsh_utility - setup zsh built-in utilities
-function zsh_utility {
-  # Use built-in paste magic.
-  autoload -Uz bracketed-paste-url-magic
-  zle -N bracketed-paste bracketed-paste-url-magic
-  autoload -Uz url-quote-magic
-  zle -N self-insert url-quote-magic
-
-  # Load more specific 'run-help' function from $fpath.
-  (( $+aliases[run-help] )) && unalias run-help && autoload -Uz run-help
-  alias help=run-help
-}
-
-##? zsh_completion - set zsh built-in completion system
-function zsh_completion {
-  local zopts=(
-    # 16.2.2 Completion
-    always_to_end           # Move cursor to the end of a completed word.
-    auto_list               # Automatically list choices on ambiguous completion.
-    auto_menu               # Show completion menu on a successive tab press.
-    auto_param_slash        # If completed parameter is a directory, add a trailing slash.
-    complete_in_word        # Complete from both ends of a word.
-    NO_menu_complete        # Do not autoselect the first completion entry.
-
-    # 16.2.3 Expansion and Globbing
-    extended_glob           # Use extended globbing syntax.
-    glob_dots               # Don't hide dotfiles from glob patterns.
-
-    # 16.2.6 Input/Output
-    path_dirs               # Perform path search even on command names with slashes.
-    NO_flow_control         # Disable start/stop characters in shell editor.
-  )
-  setopt $zopts
-
-  # Allow custom completions directory.
-  fpath=(${ZDOTDIR:-${XDG_CONFIG_HOME:-$HOME/.config}/zsh}/completions(/N) $fpath)
-
+##? docompinit - initialize the built-in Zsh completion system
+function docompinit {
   # Zsh compdump file.
-  : ${ZSH_COMPDUMP:=${XDG_CACHE_HOME:-$HOME/.cache}/zsh/zcompdump}
-  [[ -d $ZSH_COMPDUMP:h ]] || mkdir -p $ZSH_COMPDUMP:h
+  zstyle -s ':zebrafish:completion' compdump 'ZSH_COMPDUMP' ||
+    ZSH_COMPDUMP=$__zsh_cache_dir/zcompdump
 
   # Load and initialize the completion system ignoring insecure directories with a
   # cache time of 20 hours, so it should almost always regenerate the first time a
@@ -216,13 +41,31 @@ function zsh_completion {
   # Compile zcompdump, if modified, in background to increase startup speed.
   {
     if [[ -s "$ZSH_COMPDUMP" && (! -s "${ZSH_COMPDUMP}.zwc" || "$ZSH_COMPDUMP" -nt "${ZSH_COMPDUMP}.zwc") ]]; then
-      zcompile "$ZSH_COMPDUMP"
+      if command mkdir "${ZSH_COMPDUMP}.zwc.lock" 2>/dev/null; then
+        zcompile "$ZSH_COMPDUMP"
+        command rmdir  "${ZSH_COMPDUMP}.zwc.lock" 2>/dev/null
+      fi
     fi
   } &!
 }
 
-##? zsh_compstyle - set zstyle completion styles
-function zsh_compstyle {
+##? dopromptinit - initialize the built-in Zsh prompt system
+function dopromptinit {
+  # Initialize built-in prompt system.
+  autoload -Uz promptinit && promptinit
+
+  # Set prompt.
+  local -a prompt_argv
+  zstyle -a ':zebrafish:prompt' theme 'prompt_argv'
+  if [[ $TERM == (dumb|linux|*bsd*) ]]; then
+    prompt 'off'
+  elif (( $#prompt_argv > 0 )); then
+    prompt "$prompt_argv[@]"
+  fi
+}
+
+##? compstyle_zebrafish_setup - set Zsh completion styles
+function compstyle_zebrafish_setup {
   # Defaults.
   zstyle ':completion:*:default' list-colors ${(s.:.)LS_COLORS}
   zstyle ':completion:*:default' list-prompt '%S%M matches%s'
@@ -291,31 +134,179 @@ function zsh_compstyle {
   zstyle ':completion:*:man:*'      menu yes select
 }
 
-##? zsh_prompt - set zsh prompt
-function zsh_prompt {
-  setopt PROMPT_SUBST  # expand parameters in prompt variables
-  autoload -Uz promptinit && promptinit
-  (( ! $# )) || prompt $@
-}
+() {
+  #
+  # General Options
+  #
 
-##? zsh_confd - use a Fish-like conf.d directory for sourcing configs.
-function zsh_confd {
-  local zfile
-  for zfile in $ZDOTDIR/conf.d/*.zsh(N); do
+  setopt extended_glob           # Use extended globbing syntax.
+  setopt combining_chars         # Combine 0-len chars with base chars (eg: accents).
+  setopt interactive_comments    # Enable comments in interactive shell.
+  setopt rc_quotes               # Allow 'Hitchhiker''s Guide' instead of 'Hitchhiker'\''s Guide'.
+  setopt NO_beep                 # Be quiet.
+  setopt NO_mail_warning         # Don't print a warning if a mail file was accessed.
+
+  #
+  # Fish Dirs
+  #
+
+  # Add Fish-like custom completions directory.
+  fpath=($__zsh_config_dir/completions(/N) $fpath)
+
+  # Add Fish-like lazy-load functions directory.
+  local fndir
+  for fndir in $__zsh_config_dir/functions(/FN) $__zsh_config_dir/functions/*(/FN); do
+    fpath=($fndir $fpath)
+    autoload -Uz $fndir/*~*/_*(N.:t)
+  done
+
+  #
+  # Colorize
+  #
+
+  # Built-in zsh colors
+  autoload -Uz colors && colors
+
+  # Use dircolors to generate LS_COLORS
+  local prefix dircolors_file
+  local -a dircolors_exists
+  for prefix in '' 'g'; do
+    if (( $+commands[${prefix}dircolors] )); then
+      dircolors_file=$__zsh_cache_dir/${prefix}dircolors.zsh
+      dircolors_exists=($dircolors_file(Nmh-20))
+      (( $#dircolors_exists )) || ${prefix}dircolors --sh >| $dircolors_file
+      source $dircolors_file
+      alias ${prefix}ls="${aliases[${prefix}ls]:-${prefix}ls} --group-directories-first --color=auto"
+    fi
+  done
+
+  # macOS
+  if [[ "$OSTYPE" == darwin* ]]; then
+    export LSCOLORS=${LSCOLORS:-exfxcxdxbxGxDxabagacad}
+    alias ls="${aliases[ls]:-ls} -G"
+  fi
+
+  alias grep="${aliases[grep]:-grep} --color=auto"
+
+  # Show man pages in color.
+  export LESS_TERMCAP_mb=$'\e[01;34m'      # mb:=start blink-mode (bold,blue)
+  export LESS_TERMCAP_md=$'\e[01;34m'      # md:=start bold-mode (bold,blue)
+  export LESS_TERMCAP_so=$'\e[00;47;30m'   # so:=start standout-mode (white bg, black fg)
+  export LESS_TERMCAP_us=$'\e[04;35m'      # us:=start underline-mode (underline magenta)
+  export LESS_TERMCAP_se=$'\e[0m'          # se:=end standout-mode
+  export LESS_TERMCAP_ue=$'\e[0m'          # ue:=end underline-mode
+  export LESS_TERMCAP_me=$'\e[0m'          # me:=end modes
+
+  #
+  # File system
+  #
+
+  setopt auto_pushd              # Make cd push the old directory onto the dirstack.
+  setopt pushd_ignore_dups       # Don’t push multiple copies of the same directory onto the dirstack.
+  setopt pushd_minus             # Exchanges meanings of +/- when navigating the dirstack.
+  setopt pushd_silent            # Do not print the directory stack after pushd or popd.
+  setopt pushd_to_home           # Push to home directory when no argument is given.
+  setopt multios                 # Write to multiple descriptors.
+  setopt glob_dots               # Don't hide dotfiles from glob patterns.
+  setopt NO_clobber              # Don't overwrite files with >. Use >| to bypass.
+  setopt NO_rm_star_silent       # Ask for confirmation for `rm *' or `rm path/*'
+
+  alias dirh='dirs -v'
+
+  #
+  # History
+  #
+
+  setopt bang_hist               # Treat the '!' character specially during expansion.
+  setopt extended_history        # Write the history file in the ':start:elapsed;command' format.
+  setopt hist_expire_dups_first  # Expire a duplicate event first when trimming history.
+  setopt hist_find_no_dups       # Do not display a previously found event.
+  setopt hist_ignore_all_dups    # Delete an old recorded event if a new event is a duplicate.
+  setopt hist_ignore_dups        # Do not record an event that was just recorded again.
+  setopt hist_ignore_space       # Do not record an event starting with a space.
+  setopt hist_reduce_blanks      # Remove extra blanks from commands added to the history list.
+  setopt hist_save_no_dups       # Do not write a duplicate event to the history file.
+  setopt hist_verify             # Do not execute immediately upon history expansion.
+  setopt inc_append_history      # Write to the history file immediately, not when the shell exits.
+  setopt NO_hist_beep            # Don't beep when accessing non-existent history.
+  setopt NO_share_history        # Don't share history between all sessions.
+
+  HISTFILE=$__zsh_user_data_dir/zsh_history  # The path to the history file.
+  HISTSIZE=10000  # The maximum number of events to save in the internal history.
+  SAVEHIST=10000  # The maximum number of events to save in the history file.
+
+  #
+  # Job control
+  #
+
+  setopt auto_resume             # Attempt to resume existing job before creating a new process.
+  setopt long_list_jobs          # List jobs in the long format by default.
+  setopt notify                  # Report status of background jobs immediately.
+  setopt NO_bg_nice              # Don't run all background jobs at a lower priority.
+  setopt NO_check_jobs           # Don't report on jobs when shell exit.
+  setopt NO_hup                  # Don't kill jobs on shell exit.
+
+  #
+  # Utilities
+  #
+
+  # Use built-in paste magic.
+  autoload -Uz bracketed-paste-url-magic
+  zle -N bracketed-paste bracketed-paste-url-magic
+  autoload -Uz url-quote-magic
+  zle -N self-insert url-quote-magic
+
+  # Load more specific 'run-help' function from $fpath.
+  (( $+aliases[run-help] )) && unalias run-help && autoload -Uz run-help
+  alias help=run-help
+
+  # Allow mapping Ctrl+S and Ctrl+Q shortcuts
+  [[ -r ${TTY:-} && -w ${TTY:-} && $+commands[stty] == 1 ]] && stty -ixon <$TTY >$TTY
+
+  #
+  # Prompt
+  #
+
+  setopt prompt_subst  # Expand parameters in prompt variables
+
+  #
+  # Completions
+  #
+
+  setopt always_to_end           # Move cursor to the end of a completed word.
+  setopt auto_list               # Automatically list choices on ambiguous completion.
+  setopt auto_menu               # Show completion menu on a successive tab press.
+  setopt auto_param_slash        # If completed parameter is a directory, add a trailing slash.
+  setopt complete_in_word        # Complete from both ends of a word.
+  setopt path_dirs               # Perform path search even on command names with slashes.
+  setopt NO_flow_control         # Disable start/stop characters in shell editor.
+  setopt NO_menu_complete        # Do not autoselect the first completion entry.
+
+  # Set completion zstyles.
+  local zfcompstyle
+  zstyle -s ':zebrafish:completion' compstyle 'zfcompstyle' || zfcompstyle=zebrafish
+  (( $+functions[compstyle_${zfcompstyle}_setup] )) && compstyle_${zfcompstyle}_setup
+
+  #
+  # conf.d
+  #
+
+  local zfile confd
+  zstyle -s ':zebrafish:confd' path 'confd' || confd=$__zsh_config_dir/conf.d
+  for zfile in $confd/*.zsh(N); do
     [[ $zfile:t != '~'* ]] || continue
     . $zfile
   done
+
+  #
+  # Inits
+  #
+
+  # Initialize completions if the user didn't.
+  (( $+functions[compinit] )) || docompinit
+
+  # Initialize prompt if the user didn't.
+  (( $+functions[promptinit] )) || dopromptinit
 }
 
-##? zsh_funcdir - use a Fish-like functions directory for lazy-loaded functions.
-function zsh_funcdir {
-  local fn fndir funcdir=$ZDOTDIR/functions
-  [[ -d $funcdir ]] || return 1
-  for fndir in $funcdir(/FN) $funcdir/*(/FN); do
-    fpath=($fndir $fpath)
-  done
-  for fn in $funcdir/*(.N) $funcdir/*/*(.N); do
-    [[ $fn:t != '_'* ]] || continue
-    autoload -Uz $fn:t
-  done
-}
+# vim: ft=zsh sw=2 ts=2 et
