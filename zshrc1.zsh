@@ -1,16 +1,16 @@
-# zebrafish.zsh
+# zshrc1.zsh
 # > A powerful starter .zshrc
-# Project Home: https://github.com/mattmc3/zebrafish
+# Project Home: https://github.com/mattmc3/zshrc1
 
-# Init Zebrafish
+# Init zshrc1
 () {
-  typeset -g ZEBRAFISH_VERSION="3.0.0"
+  typeset -g ZSHRC1_VERSION="1.0.0"
   export __zsh_config_dir=${ZDOTDIR:-${XDG_CONFIG_HOME:-~/.config}/zsh}
   export __zsh_user_data_dir=${XDG_DATA_HOME:-~/.local/share}/zsh
   export __zsh_cache_dir=${XDG_CACHE_HOME:-~/.cache}/zsh
 
   typeset -g REPO_HOME
-  zstyle -s ':zebrafish:plugin' repo_home 'repo_home' ||
+  zstyle -s ':zshrc1:plugin' repo_home 'repo_home' ||
     REPO_HOME=${XDG_CACHE_HOME:-~/.cache}/repos
 
   local dir
@@ -22,7 +22,7 @@
 ##? docompinit - initialize the built-in Zsh completion system
 function docompinit {
   # Zsh compdump file.
-  zstyle -s ':zebrafish:completion' compdump 'ZSH_COMPDUMP' ||
+  zstyle -s ':zshrc1:completion' compdump 'ZSH_COMPDUMP' ||
     ZSH_COMPDUMP=$__zsh_cache_dir/zcompdump
 
   # Load and initialize the completion system ignoring insecure directories with a
@@ -56,7 +56,7 @@ function dopromptinit {
 
   # Set prompt.
   local -a prompt_argv
-  zstyle -a ':zebrafish:prompt' theme 'prompt_argv'
+  zstyle -a ':zshrc1:prompt' theme 'prompt_argv'
   if [[ $TERM == (dumb|linux|*bsd*) ]]; then
     prompt 'off'
   elif (( $#prompt_argv > 0 )); then
@@ -64,8 +64,8 @@ function dopromptinit {
   fi
 }
 
-##? compstyle_zebrafish_setup - set Zsh completion styles
-function compstyle_zebrafish_setup {
+##? compstyle_zshrc1_setup - set Zsh completion styles
+function compstyle_zshrc1_setup {
   # Defaults.
   zstyle ':completion:*:default' list-colors ${(s.:.)LS_COLORS}
   zstyle ':completion:*:default' list-prompt '%S%M matches%s'
@@ -284,7 +284,7 @@ function compstyle_zebrafish_setup {
 
   # Set completion zstyles.
   local zfcompstyle
-  zstyle -s ':zebrafish:completion' compstyle 'zfcompstyle' || zfcompstyle=zebrafish
+  zstyle -s ':zshrc1:completion' compstyle 'zfcompstyle' || zfcompstyle=zshrc1
   (( $+functions[compstyle_${zfcompstyle}_setup] )) && compstyle_${zfcompstyle}_setup
 
   #
@@ -292,7 +292,7 @@ function compstyle_zebrafish_setup {
   #
 
   local zfile confd
-  zstyle -s ':zebrafish:confd' path 'confd' || confd=$__zsh_config_dir/conf.d
+  zstyle -s ':zshrc1:confd' path 'confd' || confd=$__zsh_config_dir/conf.d
   for zfile in $confd/*.zsh(N); do
     [[ $zfile:t != '~'* ]] || continue
     . $zfile
