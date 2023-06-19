@@ -1,4 +1,5 @@
-# zshrc1.zsh
+#!/bin/zsh
+# .zshrc1
 # > A powerful starter .zshrc
 # Project Home: https://github.com/mattmc3/zshrc1
 
@@ -19,8 +20,8 @@
   done
 }
 
-##? docompinit - initialize the built-in Zsh completion system
-function docompinit {
+##? runcompinit - initialize the built-in Zsh completion system
+function runcompinit {
   # Zsh compdump file.
   zstyle -s ':zshrc1:completion' compdump 'ZSH_COMPDUMP' ||
     ZSH_COMPDUMP=$__zsh_cache_dir/zcompdump
@@ -49,8 +50,8 @@ function docompinit {
   } &!
 }
 
-##? dopromptinit - initialize the built-in Zsh prompt system
-function dopromptinit {
+##? runpromptinit - initialize the built-in Zsh prompt system
+function runpromptinit {
   # Initialize built-in prompt system.
   autoload -Uz promptinit && promptinit
 
@@ -303,10 +304,10 @@ function compstyle_zshrc1_setup {
   #
 
   # Initialize completions if the user didn't.
-  (( $+functions[compinit] )) || docompinit
+  (( $+functions[compinit] )) || runcompinit
 
   # Initialize prompt if the user didn't.
-  (( $+functions[promptinit] )) || dopromptinit
+  (( $+functions[promptinit] )) || runpromptinit
 }
 
 # vim: ft=zsh sw=2 ts=2 et
