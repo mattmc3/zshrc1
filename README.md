@@ -61,3 +61,7 @@ Next, source .zshrc1 in your `.zshrc`:
 # .zshrc
 source ${ZDOTDIR:-~}/.zshrc1
 ```
+
+[ohmyzsh]: https://github.com/ohmyzsh/ohmyzsh
+[prezto]: https://github.com/sorin-ionescu/prezto
+[grml-zshrc]: https://github.com/grml/grml-etc-core/blob/master/etc/zsh/zshrc
