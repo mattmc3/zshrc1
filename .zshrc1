@@ -12,9 +12,10 @@
   export __zsh_user_data_dir=${XDG_DATA_HOME:-~/.local/share}/zsh
   export __zsh_cache_dir=${XDG_CACHE_HOME:-~/.cache}/zsh
 
-  local dir
-  for dir in $__zsh_user_data_dir $__zsh_config_dir $__zsh_cache_dir; do
-    [[ -d "$dir" ]] || mkdir -p $dir
+  # Ensure Zsh directories exist.
+  local zdir
+  for zdir in __zsh_{config,user_data,cache}_dir; do
+    [[ -d "${(P)zdir}" ]] || mkdir -p ${(P)zdir}
   done
 
   # Customize with zstyles.
@@ -152,6 +153,7 @@ function __coreutils_alias_setup {
   alias ${prefix}ls="${aliases[${prefix}ls]:-${prefix}ls} --group-directories-first --color=auto"
 }
 
+# Run zshrc1.
 () {
   #
   # General Options
@@ -250,6 +252,9 @@ function __coreutils_alias_setup {
   # Set the maximum number of events to save in the history file.
   zstyle -s ':zshrc1:history' savehist 'SAVEHIST' \
     || SAVEHIST=100000
+
+  # Use a better history command.
+  alias history='fc -li'
 
   #
   # Job control
