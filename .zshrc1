@@ -6,23 +6,25 @@
 # Init zshrc1
 () {
   typeset -g ZSHRC1_VERSION="1.0.0"
+
+  # Add Fish-like variables for key Zsh directories.
   export __zsh_config_dir=${ZDOTDIR:-${XDG_CONFIG_HOME:-~/.config}/zsh}
   export __zsh_user_data_dir=${XDG_DATA_HOME:-~/.local/share}/zsh
   export __zsh_cache_dir=${XDG_CACHE_HOME:-~/.cache}/zsh
-
-  typeset -g REPO_HOME
-  zstyle -s ':zshrc1:plugin' repo_home 'repo_home' ||
-    REPO_HOME=${XDG_CACHE_HOME:-~/.cache}/repos
 
   local dir
   for dir in $__zsh_user_data_dir $__zsh_config_dir $__zsh_cache_dir; do
     [[ -d "$dir" ]] || mkdir -p $dir
   done
+
+  # Customize with zstyles.
+  [[ ! -r $__zsh_config_dir/.zstyles ]] || source $__zsh_config_dir/.zstyles
 }
 
-##? runcompinit - initialize the built-in Zsh completion system
-function runcompinit {
+##? run_compinit - Initialize the built-in Zsh completion system.
+function run_compinit {
   # Zsh compdump file.
+  typeset -g ZSH_COMPDUMP
   zstyle -s ':zshrc1:completion' compdump 'ZSH_COMPDUMP' ||
     ZSH_COMPDUMP=$__zsh_cache_dir/zcompdump
 
@@ -50,8 +52,8 @@ function runcompinit {
   } &!
 }
 
-##? runpromptinit - initialize the built-in Zsh prompt system
-function runpromptinit {
+##? run_promptinit - Initialize the built-in Zsh prompt system.
+function run_promptinit {
   # Initialize built-in prompt system.
   autoload -Uz promptinit && promptinit
 
@@ -65,7 +67,7 @@ function runpromptinit {
   fi
 }
 
-##? compstyle_zshrc1_setup - set Zsh completion styles
+# compstyle_zshrc1_setup - Set Zsh completion styles.
 function compstyle_zshrc1_setup {
   # Defaults.
   zstyle ':completion:*:default' list-colors ${(s.:.)LS_COLORS}
@@ -135,6 +137,21 @@ function compstyle_zshrc1_setup {
   zstyle ':completion:*:man:*'      menu yes select
 }
 
+# coreutils_alias_setup - Add colorization for ls command.
+function __coreutils_alias_setup {
+  local prefix=$1  # 'g' or '' for GNU coreutils alongside BSD coreutils
+
+  # Cache results of running dircolors for 20 hours, so it should almost
+  # always regenerate the first time a shell is opened each day.
+  local dircolors_cache=$__zsh_cache_dir/${prefix}dircolors.zsh
+  local cache_files=($dircolors_cache(Nmh-20))
+  if ! (( $#cache_files )); then
+    ${prefix}dircolors --sh >| $dircolors_cache
+  fi
+  source "${dircolors_cache}"
+  alias ${prefix}ls="${aliases[${prefix}ls]:-${prefix}ls} --group-directories-first --color=auto"
+}
+
 () {
   #
   # General Options
@@ -148,15 +165,15 @@ function compstyle_zshrc1_setup {
   setopt NO_mail_warning         # Don't print a warning if a mail file was accessed.
 
   #
-  # Fish Dirs
+  # Autoload functions
   #
 
-  # Add Fish-like custom completions directory.
-  fpath=($__zsh_config_dir/completions(/N) $fpath)
-
   # Add Fish-like lazy-load functions directory.
+  typeset -g ZFUNCDIR
+  zstyle -s ':zshrc1:function' dir 'ZFUNCDIR' \
+    || ZFUNCDIR=$__zsh_config_dir/functions
   local fndir
-  for fndir in $__zsh_config_dir/functions(/FN) $__zsh_config_dir/functions/*(/FN); do
+  for fndir in $ZFUNCDIR(-/FN) $ZFUNCDIR/*(-/FN); do
     fpath=($fndir $fpath)
     autoload -Uz $fndir/*~*/_*(N.:t)
   done
@@ -168,27 +185,6 @@ function compstyle_zshrc1_setup {
   # Built-in zsh colors
   autoload -Uz colors && colors
 
-  # Use dircolors to generate LS_COLORS
-  local prefix dircolors_file
-  local -a dircolors_exists
-  for prefix in '' 'g'; do
-    if (( $+commands[${prefix}dircolors] )); then
-      dircolors_file=$__zsh_cache_dir/${prefix}dircolors.zsh
-      dircolors_exists=($dircolors_file(Nmh-20))
-      (( $#dircolors_exists )) || ${prefix}dircolors --sh >| $dircolors_file
-      source $dircolors_file
-      alias ${prefix}ls="${aliases[${prefix}ls]:-${prefix}ls} --group-directories-first --color=auto"
-    fi
-  done
-
-  # macOS
-  if [[ "$OSTYPE" == darwin* ]]; then
-    export LSCOLORS=${LSCOLORS:-exfxcxdxbxGxDxabagacad}
-    alias ls="${aliases[ls]:-ls} -G"
-  fi
-
-  alias grep="${aliases[grep]:-grep} --color=auto"
-
   # Show man pages in color.
   export LESS_TERMCAP_mb=$'\e[01;34m'      # mb:=start blink-mode (bold,blue)
   export LESS_TERMCAP_md=$'\e[01;34m'      # md:=start bold-mode (bold,blue)
@@ -198,12 +194,24 @@ function compstyle_zshrc1_setup {
   export LESS_TERMCAP_ue=$'\e[0m'          # ue:=end underline-mode
   export LESS_TERMCAP_me=$'\e[0m'          # me:=end modes
 
+  # Set colors for grep and ls command using dircolors if available.
+  alias grep="${aliases[grep]:-grep} --color=auto"
+  if (( $+commands[gdircolors] )); then
+    __coreutils_alias_setup g
+  fi
+  if (( $+commands[dircolors] )); then
+    __coreutils_alias_setup
+  else
+    alias ls="${aliases[ls]:-ls} -G"
+    export LSCOLORS=${LSCOLORS:-exfxcxdxbxGxDxabagacad}
+  fi
+  unfunction -- __coreutils_alias_setup
+
   #
   # File system
   #
 
   setopt auto_pushd              # Make cd push the old directory onto the dirstack.
-  setopt pushd_ignore_dups       # Don’t push multiple copies of the same directory onto the dirstack.
   setopt pushd_minus             # Exchanges meanings of +/- when navigating the dirstack.
   setopt pushd_silent            # Do not print the directory stack after pushd or popd.
   setopt pushd_to_home           # Push to home directory when no argument is given.
@@ -212,6 +220,7 @@ function compstyle_zshrc1_setup {
   setopt NO_clobber              # Don't overwrite files with >. Use >| to bypass.
   setopt NO_rm_star_silent       # Ask for confirmation for `rm *' or `rm path/*'
 
+  # Show directory stack.
   alias dirh='dirs -v'
 
   #
@@ -232,9 +241,15 @@ function compstyle_zshrc1_setup {
   setopt NO_hist_beep            # Don't beep when accessing non-existent history.
   setopt NO_share_history        # Don't share history between all sessions.
 
-  HISTFILE=$__zsh_user_data_dir/zsh_history  # The path to the history file.
-  HISTSIZE=10000  # The maximum number of events to save in the internal history.
-  SAVEHIST=10000  # The maximum number of events to save in the history file.
+  # Set the path to the history file.
+  zstyle -s ':zshrc1:history' histfile 'HISTFILE' \
+    || HISTFILE="$__zsh_user_data_dir/zsh_history"
+  # Set the maximum number of events to save in the internal history.
+  zstyle -s ':zshrc1:history' histsize 'HISTSIZE' \
+    || HISTSIZE=20000
+  # Set the maximum number of events to save in the history file.
+  zstyle -s ':zshrc1:history' savehist 'SAVEHIST' \
+    || SAVEHIST=100000
 
   #
   # Job control
@@ -265,10 +280,17 @@ function compstyle_zshrc1_setup {
   [[ -r ${TTY:-} && -w ${TTY:-} && $+commands[stty] == 1 ]] && stty -ixon <$TTY >$TTY
 
   #
-  # Prompt
+  # conf.d
   #
 
-  setopt prompt_subst  # Expand parameters in prompt variables
+  # Use Fish-like conf.d for loading config.
+  local zfile confd
+  zstyle -s ':zshrc1:confd' dir 'confd' \
+    || confd=$__zsh_config_dir/conf.d
+  for zfile in $confd/*.zsh(N); do
+    [[ ${zfile:t} != '~'* ]] || continue
+    source $zfile
+  done
 
   #
   # Completions
@@ -283,31 +305,27 @@ function compstyle_zshrc1_setup {
   setopt NO_flow_control         # Disable start/stop characters in shell editor.
   setopt NO_menu_complete        # Do not autoselect the first completion entry.
 
+  # Add Fish-like custom completions directory.
+  fpath=($__zsh_config_dir/completions(/N) $fpath)
+
   # Set completion zstyles.
-  local zfcompstyle
-  zstyle -s ':zshrc1:completion' compstyle 'zfcompstyle' || zfcompstyle=zshrc1
-  (( $+functions[compstyle_${zfcompstyle}_setup] )) && compstyle_${zfcompstyle}_setup
-
-  #
-  # conf.d
-  #
-
-  local zfile confd
-  zstyle -s ':zshrc1:confd' path 'confd' || confd=$__zsh_config_dir/conf.d
-  for zfile in $confd/*.zsh(N); do
-    [[ $zfile:t != '~'* ]] || continue
-    . $zfile
-  done
-
-  #
-  # Inits
-  #
+  typeset -g ZSH_COMPSTYLE
+  zstyle -s ':zshrc1:completion' compstyle 'ZSH_COMPSTYLE' \
+    || ZSH_COMPSTYLE=zshrc1
+  (( $+functions[compstyle_${ZSH_COMPSTYLE}_setup] )) && compstyle_${ZSH_COMPSTYLE}_setup
 
   # Initialize completions if the user didn't.
-  (( $+functions[compinit] )) || runcompinit
+  (( $+functions[compinit] )) || run_compinit
+
+  #
+  # Prompt
+  #
+
+  # Expand parameters in prompt variables.
+  setopt prompt_subst
 
   # Initialize prompt if the user didn't.
-  (( $+functions[promptinit] )) || runpromptinit
+  (( $+functions[promptinit] )) || run_promptinit
 }
 
 # vim: ft=zsh sw=2 ts=2 et
