@@ -5,7 +5,7 @@
 
 # Init zshrc1
 () {
-  typeset -g ZSHRC1_VERSION="1.0.0"
+  typeset -g ZSHRC1_VERSION="1.0.1"
 
   # Add Fish-like variables for key Zsh directories.
   export __zsh_config_dir=${ZDOTDIR:-${XDG_CONFIG_HOME:-~/.config}/zsh}
