@@ -250,21 +250,6 @@ function z1_init_utility {
   fi
 }
 
-function z1_init_confd {
-  # Which conf.d directory to use? Use glob_subst to support '~'.
-  local confd
-  zstyle -s ':zshrc1:confd' directory 'confd' || confd=$__zsh_config_dir/conf.d
-  confd=${~confd}
-
-  # Source all scripts in conf.d.
-  local zrcfile
-  for zrcfile in $confd/*.{z,}sh(N); do
-    # ignore files that begin with ~
-    [[ ${zrcfile:t} == '~'* ]] && continue
-    source $zrcfile
-  done
-}
-
 function z1_init_zfunctions {
   # Which autoload functions directory to use? Use glob_subst to support '~'.
   if [[ -z "$ZFUNCDIR" ]]; then
@@ -303,6 +288,21 @@ function z1_init_prompt {
   elif (( $#prompt_argv > 0 )); then
     prompt "$prompt_argv[@]"
   fi
+}
+
+function z1_init_confd {
+  # Which conf.d directory to use? Use glob_subst to support '~'.
+  local confd
+  zstyle -s ':zshrc1:confd' directory 'confd' || confd=$__zsh_config_dir/conf.d
+  confd=${~confd}
+
+  # Source all scripts in conf.d.
+  local zrcfile
+  for zrcfile in $confd/*.{z,}sh(N); do
+    # ignore files that begin with ~
+    [[ ${zrcfile:t} == '~'* ]] && continue
+    source $zrcfile
+  done
 }
 
 function z1_init_completion {
@@ -622,8 +622,8 @@ function plugin-compile {
   z1_init_color
   z1_init_editor
   z1_init_utility
-  z1_init_prompt
   z1_init_zfunctions
+  z1_init_prompt
   z1_init_confd
   z1_init_completion
 }
