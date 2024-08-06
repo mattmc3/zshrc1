@@ -3,7 +3,7 @@
 # > A powerful starter .zshrc
 # Project Home: https://github.com/mattmc3/zshrc1
 
-function z1_ensure_dirs_exist {
+function mkdirvar {
   local zdirvar
   for zdirvar in $@; do
     [[ -d "${(P)zdirvar}" ]] || mkdir -p "$(P){zdirvar}"
@@ -16,7 +16,7 @@ function z1_init_environment {
     export XDG_CACHE_HOME=${XDG_CACHE_HOME:-$HOME/.cache}
     export XDG_DATA_HOME=${XDG_DATA_HOME:-$HOME/.local/share}
     export XDG_STATE_HOME=${XDG_STATE_HOME:-$HOME/.local/state}
-    z1_ensure_dirs_exist XDG_{CONFIG,CACHE,DATA,STATE}_HOME
+    mkdirvar XDG_{CONFIG,CACHE,DATA,STATE}_HOME
   fi
 
   # Set Zsh options related to globbing.
@@ -799,7 +799,7 @@ function z1_init_plugins {
   export __zsh_config_dir=${ZDOTDIR:-${XDG_CONFIG_HOME:-$HOME/.config}/zsh}
   export __zsh_user_data_dir=${XDG_DATA_HOME:-$HOME/.local/share}/zsh
   export __zsh_cache_dir=${XDG_CACHE_HOME:-$HOME/.cache}/zsh
-  z1_ensure_dirs_exist __zsh_{config,user_data,cache}_dir
+  mkdirvar __zsh_{config,user_data,cache}_dir
 
   # Users can customize with zstyles if they want.
   [[ ! -r $__zsh_config_dir/.zstyles ]] || source $__zsh_config_dir/.zstyles
