@@ -24,7 +24,7 @@ function z1_init_environment {
   # Set Zsh options related to globbing.
   setopt extended_glob         # Use more awesome globbing features.
   setopt glob_dots             # Include dotfiles when globbing.
-  setopt no_rm_star_silent     # Ask for confirmation for `rm *' or `rm path/*'
+  setopt NO_rm_star_silent     # Ask for confirmation for `rm *' or `rm path/*'
 
   # Set general Zsh options.
   setopt combining_chars       # Combine 0-len chars with the base character (eg: accents).
@@ -62,19 +62,31 @@ function z1_init_environment {
   path=(/usr/local/{,s}bin(N) $path)
 
   # Setup homebrew if it exists on the system.
-  local -aU brew_cmds=(
-    /usr/local/bin/brew(N)
+  local brew_owner; local -aU brew_cmds
+  brew_cmds=(
+    $commands[brew]
+    $HOME/.homebrew/bin/brew(N)
+    $HOME/.linuxbrew/bin/brew(N)
     /opt/homebrew/bin/brew(N)
-    $commands[brew](N)
-    $HOME/brew/bin/brew(N)
+    /usr/local/bin/brew(N)
+    /home/linuxbrew/.linuxbrew/bin/brew(N)
   )
-  for brewcmd in $brew_cmds; do
-    # By looping, we get a properly built path.
-    source <($brewcmd shellenv)
-  done
+  if [[ "${#brew_cmds}" -gt 0 ]]; then
+    if [[ -z "$HOMEBREW_PREFIX" ]]; then
+      source <("${brew_cmds[1]}" shellenv)
+    fi
+    brew_owner="$(stat -f "%Su" "$HOMEBREW_PREFIX")"
+    if [[ "$(whoami)" != "$brew_owner" ]]; then
+      alias brew="sudo -Hu '$brew_owner' brew"
+    fi
+  fi
 
-  # Allow user bin.
-  path=($HOME/{,s}bin(N) $path)
+  # Allow user bins.
+  path=(
+    $HOME/{,s}bin(N)
+    $HOME/.local/{,s}bin(N)
+    $path
+  )
 }
 
 # Init common history options, variables, and aliases.
