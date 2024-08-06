@@ -609,6 +609,14 @@ fi
 #region Prompt
 #
 
+# Prompt options
+setopt prompt_subst       # Expand parameters in prompt variables.
+setopt transient_rprompt  # Remove right prompt artifacts from prior commands.
+
+# Set 2 space indent for each new level in a multi-line script. This can then be
+# overridden by a prompt or plugin, but is a better default than Zsh's.
+PS2='${${${(%):-%_}//[^ ]}// /  }    '
+
 # Wrap powerlevel10k prompt to support themes directory
 function prompt_p10k_setup {
   if [[ -n "$1" ]]; then
@@ -658,17 +666,12 @@ function promptinit {
 
   # Keep prompt array sorted.
   prompt_themes=( "${(@on)prompt_themes}" )
+
+  # We can run promptinit early, and if we did we no longer need a post_zshrc hook.
+  post_zshrc_hook=(${post_zshrc_hook:#run_promptinit})
 }
 
 function run_promptinit {
-  # Prompt options
-  setopt prompt_subst       # Expand parameters in prompt variables.
-  setopt transient_rprompt  # Remove right prompt artifacts from prior commands.
-
-  # Set 2 space indent for each new level in a multi-line script. This can then be
-  # overridden by a prompt or plugin, but is a better default than Zsh's.
-  PS2='${${${(%):-%_}//[^ ]}// /  }    '
-
   # Initialize the built-in prompt system.
   autoload -Uz promptinit && promptinit
 
