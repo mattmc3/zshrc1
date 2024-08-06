@@ -41,6 +41,9 @@ function run_post_zshrc {
   unfunction -- run_post_zshrc
   unset -- post_zshrc_hook
 }
+
+# Attach run_post_zshrc to built-in precmd.
+autoload -U add-zsh-hook
 add-zsh-hook precmd run_post_zshrc
 
 #
