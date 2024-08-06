@@ -117,12 +117,18 @@ function z1_init_environment {
     fi
   fi
 
-  # Allow user bins.
-  path=(
-    $HOME/{,s}bin(N)
-    $HOME/.local/{,s}bin(N)
-    $path
-  )
+  # Set the list of directories that Zsh searches for programs.
+  typeset -gaU prepath
+  if [[ "${#prepath}" -eq 0 ]]; then
+    zstyle -s ':zshrc1:environment' 'prepath' 'prepath' \
+    || prepath=(
+        $HOME/{,s}bin(N)
+        $HOME/.local/{,s}bin(N)
+      )
+  fi
+
+  # If path gets prepended and is now out of order, do `path=($prepath $path)`.
+  path=($prepath $path)
 }
 
 # Init common history options, variables, and aliases.
