@@ -2,7 +2,8 @@
 typeset -gHa __plugin_zopts=(extended_glob glob_dots no_monitor)
 
 function plugin-help {
-  emulate -L zsh; setopt local_options $__plugin_zopts
+  emulate -L zsh
+  setopt local_options $__plugin_zopts
   echo "usage: plugin <command>"
   echo "       plugin load [--kind <path_fpath>] <plugins...>"
   echo ""
@@ -18,7 +19,8 @@ function plugin-help {
 }
 
 function plugin-clone {
-  emulate -L zsh; setopt local_options $__plugin_zopts
+  emulate -L zsh
+  setopt local_options $__plugin_zopts
   local repo plugdir; local -Ua repos
   local plugin_home="$(plugin-home)"
 
@@ -53,7 +55,8 @@ function plugin-load {
 }
 
 function plugin-script {
-  emulate -L zsh; setopt local_options $__plugin_zopts
+  emulate -L zsh
+  setopt local_options $__plugin_zopts
 
   # parse args: kind=path,fpath
   local kind badopt
@@ -101,7 +104,8 @@ function plugin-script {
 }
 
 function plugin-list {
-  emulate -L zsh; setopt local_options $__plugin_zopts
+  emulate -L zsh
+  setopt local_options $__plugin_zopts
   local plugin_home="$(plugin-home)"
   for plugdir in "$plugin_home"/*/*/.git(N/); do
     echo "${${plugdir:A:h}##$plugin_home/}"
@@ -109,7 +113,8 @@ function plugin-list {
 }
 
 function plugin-update {
-  emulate -L zsh; setopt local_options $__plugin_zopts
+  emulate -L zsh
+  setopt local_options $__plugin_zopts
 
   local plugdir oldsha newsha
   for plugdir in "$(plugin-home)"/*/*/.git(N/); do
@@ -144,7 +149,8 @@ function plugin-remove {
 }
 
 function plugin-compile {
-  emulate -L zsh; setopt local_options $__plugin_zopts
+  emulate -L zsh
+  setopt local_options $__plugin_zopts
 
   autoload -Uz zrecompile
   local zfile
