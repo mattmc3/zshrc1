@@ -142,12 +142,23 @@ function z1_init_history {
   setopt NO_hist_beep            # Don't beep when accessing non-existent history.
   setopt NO_share_history        # Don't share history between all sessions.
 
-  # Path to the history file.
-  zstyle -s ':zshrc1:history' histfile 'HISTFILE' || HISTFILE=$__zsh_user_data_dir/zsh_history
-  [[ -d $HISTFILE:h ]] || mkdir -p $HISTFILE:h
+  # Set the path to the default history file.
+  : ${__zsh_user_data_dir:=${XDG_DATA_HOME:-$HOME/.local/share}/zsh}
+  if ! zstyle -s ':zshrc1:history' histfile 'HISTFILE'; then
+    if zstyle -T ':zshrc1:history' use-xdg-basedirs; then
+      HISTFILE="${__zsh_user_data_dir}/zsh_history"
+    else
+      HISTFILE="${ZDOTDIR:-$HOME}/.zsh_history"
+    fi
+  fi
+
+  # Make sure the user didn't store an empty history file, or a literal '~',
+  # and that the history path exists. Basically, protect the user from themselves.
+  HISTFILE="${~HISTFILE}"
+  [[ -d "${HISTFILE:h}" ]] || mkdir -p "${HISTFILE:h}"
 
   # History file size (default 1000).
-  zstyle -s ':zshrc1:history' savehist 'SAVEHIST' || SAVEHIST=10000
+  zstyle -s ':zshrc1:history' savehist 'SAVEHIST' || SAVEHIST=100000
 
   # Session history size, default: 2000).
   zstyle -s ':zshrc1:history' histsize 'HISTSIZE' || HISTSIZE=20000
