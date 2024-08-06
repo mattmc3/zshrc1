@@ -1,17 +1,6 @@
 # unplugged - A simple plugin manager
 typeset -gHa __plugin_zopts=(extended_glob glob_dots no_monitor)
 
-function plugin {
-  local cmd=$1
-  (( $# )) && shift || cmd=help
-  [[ $cmd == (-h|--help) ]] && cmd=help
-  if (( $+functions[plugin-$cmd] )); then
-    "plugin-$cmd" "$@"
-  else
-    echo "plugin: command not found '$cmd'."
-  fi
-}
-
 function plugin-help {
   emulate -L zsh; setopt local_options $__plugin_zopts
   echo "usage: plugin <command>"
@@ -163,4 +152,15 @@ function plugin-compile {
     [[ "$zfile" != */test-data/* ]] || continue
     zrecompile -pq "$zfile"
   done
+}
+
+function plugin {
+  local cmd=$1
+  (( $# )) && shift || cmd=help
+  [[ $cmd == (-h|--help) ]] && cmd=help
+  if (( $+functions[plugin-$cmd] )); then
+    "plugin-$cmd" "$@"
+  else
+    echo "plugin: command not found '$cmd'."
+  fi
 }
