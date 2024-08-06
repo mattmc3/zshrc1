@@ -5,10 +5,46 @@
 
 # Make a directory from a variable name.
 function mkdirvar {
+  emulate -L zsh; setopt local_options extended_glob
   local zdirvar
   for zdirvar in $@; do
     [[ -d "${(P)zdirvar}" ]] || mkdir -p "$(P){zdirvar}"
   done
+}
+
+# Init common helper functions.
+function z1_init_helpers {
+  # Check if a file can be autoloaded by trying to load it in a subshell.
+  function is-autoloadable {
+    ( unfunction "$1"; autoload -U +X "$1" ) &> /dev/null
+  }
+
+  # Checks if a name is a command, function, or alias.
+  function is-callable {
+    (( $+commands[$1] || $+functions[$1] || $+aliases[$1] || $+builtins[$1] ))
+  }
+
+  # Check whether a string represents "true" (1, y, yes, t, true, o, on).
+  function is-true {
+    [[ -n "$1" && "$1:l" == (1|y(es|)|t(rue|)|o(n|)) ]]
+  }
+
+  # OS checks.
+  function is-macos  { [[ "$OSTYPE" == darwin* ]] }
+  function is-linux  { [[ "$OSTYPE" == linux*  ]] }
+  function is-bsd    { [[ "$OSTYPE" == *bsd*   ]] }
+  function is-cygwin { [[ "$OSTYPE" == cygwin* ]] }
+  function is-termux { [[ "$OSTYPE" == linux-android ]] }
+
+  # Check term family.
+  function is-term-family {
+    [[ $TERM = $1 || $TERM = $1-* ]]
+  }
+
+  # Check if tmux.
+  function is-tmux {
+    is-term-family tmux || [[ -n "$TMUX" ]]
+  }
 }
 
 # Init common environment variables.
@@ -202,16 +238,6 @@ function z1_init_color {
 
   # Colorize completions
   zstyle ':completion:*:default' list-colors ${(s.:.)LS_COLORS}
-}
-
-# Check term family.
-function is-term-family {
-  [[ $TERM = $1 || $TERM = $1-* ]]
-}
-
-# Check if tmux.
-function is-tmux {
-  is-term-family tmux || [[ -n "$TMUX" ]]
 }
 
 # Update cursor style.
@@ -698,7 +724,6 @@ function z1_init_plugins {
 # Run zshrc1
 () {
   typeset -g ZSHRC1_VERSION="1.0.1"
-  typeset -gHa __plugin_zopts=(extended_glob glob_dots no_monitor)
 
   # Minimal required environment vars.
   export __zsh_config_dir=${ZDOTDIR:-${XDG_CONFIG_HOME:-$HOME/.config}/zsh}
@@ -710,6 +735,7 @@ function z1_init_plugins {
   [[ ! -r $__zsh_config_dir/.zstyles ]] || source $__zsh_config_dir/.zstyles
 
   # Run inits.
+  z1_init_helpers
   z1_init_environment
   z1_init_history
   z1_init_directory
