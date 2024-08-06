@@ -80,8 +80,8 @@ function -plugin-script {
     return 1
   fi
 
-  local plugin_home="$(-plugin-home)"
-  local plugin src="source" inits=()
+  local plugin_home="$(-plugin-home)" src="source"
+  local plugin plugindir init inits=()
   (( ! $+functions[zsh-defer] )) || src="zsh-defer ."
 
   for plugin in $@; do
@@ -90,20 +90,28 @@ function -plugin-script {
     else
       inits=(
         $__zsh_config_dir/plugins/$plugin/${plugin:t}.{plugin.zsh,zsh-theme,zsh,sh}(N)
-        $plugin_home/$plugin/${plugin:t}.{plugin.zsh,zsh-theme,zsh,sh}(N)
-        $plugin_home/$plugin/*.{plugin.zsh,zsh-theme,zsh,sh}(N)
-        $plugin_home/$plugin(N)
-        ${plugin}/*.{plugin.zsh,zsh-theme,zsh,sh}(N)
-        ${plugin}(N)
+        $plugin_home/${plugin}/${plugin:t}.plugin.zsh(N)
+        $plugin_home/${plugin}/*.{zsh-theme,plugin.zsh}(N)
+        $plugin_home/$plugin(.N)
+        $plugin_home/$plugin.{plugin.zsh,zsh,zsh-theme}(.N)
+        ${plugin}(.N)
       )
-      if [[ $#inits -eq 0 ]]; then
-        print >&2 "No plugin init found '$plugin'. Did you forget to clone?"
+      if [[ "${#inits}" -gt 0 ]]; then
+        inits=($inits[1])
+      else
+        inits=($plugin_home/${plugin}/*.{z,}sh(N))
+      fi
+
+      if [[ "${#inits}" -eq 0 ]]; then
+        print >&2 "plugin: No plugin init found '$plugin'. Did you forget to clone?"
         continue
       fi
-      plugin=$inits[1]
-      print "fpath=(\$fpath $plugin:h)"
-      print "$src $plugin"
-      [[ "$plugin:h:t" == zsh-defer ]] && src="zsh-defer ."
+      for init in $inits; do
+        print "$src $init"
+      done
+      plugindir=${inits[1]:h}
+      print "fpath+=( $plugindir )"
+      [[ "${plugindir:t}" == zsh-defer ]] && src="zsh-defer ."
     fi
   done
 }
