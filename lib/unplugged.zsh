@@ -1,9 +1,10 @@
 # unplugged - A simple plugin manager
 typeset -gHa __plugin_zopts=(extended_glob glob_dots no_monitor)
 
-function plugin-help {
+function -plugin-help {
   emulate -L zsh
   setopt local_options $__plugin_zopts
+
   print "usage: plugin <command>"
   print "       plugin load [--kind <path_fpath>] <plugins...>"
   print ""
@@ -18,11 +19,12 @@ function plugin-help {
   print ""
 }
 
-function plugin-clone {
+function -plugin-clone {
   emulate -L zsh
   setopt local_options $__plugin_zopts
+
   local repo plugdir; local -Ua repos
-  local plugin_home="$(plugin-home)"
+  local plugin_home="$(-plugin-home)"
 
   # Remove bare words ${(M)@:#*/*} and paths with leading slash ${@:#/*}.
   # Then split/join to keep the 2-part user/repo form to bulk-clone repos.
@@ -38,23 +40,26 @@ function plugin-clone {
       (
         command git clone -q --depth 1 --recursive --shallow-submodules \
           "https://github.com/${repo}" "$plugdir"
-        plugin-compile "$plugdir"
+        -plugin-compile "$plugdir"
       ) &
     fi
   done
   wait
 }
 
-function plugin-home {
+function -plugin-home {
+  emulate -L zsh
+  setopt local_options $__plugin_zopts
+
   : ${__zsh_cache_dir:=${XDG_CACHE_HOME:-$HOME/.cache}/zsh}
   [[ -n "$ZPLUGINDIR" ]] && print "$ZPLUGINDIR" || print "$__zsh_cache_dir/repos"
 }
 
-function plugin-load {
-  source <(plugin-script $@)
+function -plugin-load {
+  source <(-plugin-script $@)
 }
 
-function plugin-script {
+function -plugin-script {
   emulate -L zsh
   setopt local_options $__plugin_zopts
 
@@ -75,7 +80,7 @@ function plugin-script {
     return 1
   fi
 
-  local plugin_home="$(plugin-home)"
+  local plugin_home="$(-plugin-home)"
   local plugin src="source" inits=()
   (( ! $+functions[zsh-defer] )) || src="zsh-defer ."
 
@@ -103,21 +108,22 @@ function plugin-script {
   done
 }
 
-function plugin-list {
+function -plugin-list {
   emulate -L zsh
   setopt local_options $__plugin_zopts
-  local plugin_home="$(plugin-home)"
+
+  local plugin_home="$(-plugin-home)"
   for plugdir in "$plugin_home"/*/*/.git(N/); do
     print "${${plugdir:A:h}##$plugin_home/}"
   done
 }
 
-function plugin-update {
+function -plugin-update {
   emulate -L zsh
   setopt local_options $__plugin_zopts
 
   local plugdir oldsha newsha
-  for plugdir in "$(plugin-home)"/*/*/.git(N/); do
+  for plugdir in "$(-plugin-home)"/*/*/.git(N/); do
     plugdir=${plugdir:A:h}
     print "Updating ${plugdir:h:t}/${plugdir:t}..."
     (
@@ -128,44 +134,45 @@ function plugin-update {
     ) &
   done
   wait
-  plugin-compile
+  -plugin-compile
   print "Update complete."
 }
 
-function plugin-remove {
+function -plugin-remove {
   emulate -L zsh
   setopt local_options $__plugin_zopts
 
   local plugin ret=0
   for plugin in $@; do
-    if [[ -d $(plugin-home)/$plugin/.git ]]; then
-      rm -rf -- $(plugin-home)/$plugin
+    if [[ -d $(-plugin-home)/$plugin/.git ]]; then
+      rm -rf -- $(-plugin-home)/$plugin
     else
-      print >&2 "Plugin not found: $(plugin-home)/$plugin..."
+      print >&2 "Plugin not found: $(-plugin-home)/$plugin..."
       ret=1
     fi
   done
   return $ret
 }
 
-function plugin-compile {
+function -plugin-compile {
   emulate -L zsh
   setopt local_options $__plugin_zopts
 
   autoload -Uz zrecompile
   local zfile
-  for zfile in "${1:-$(plugin-home)}"/**/*.zsh{,-theme}(N); do
+  for zfile in "${1:-$(-plugin-home)}"/**/*.zsh{,-theme}(N); do
     [[ "$zfile" != */test-data/* ]] || continue
     zrecompile -pq "$zfile"
   done
 }
 
+##? The humble un-plugin manager
 function plugin {
   local cmd=$1
   (( $# )) && shift || cmd=help
   [[ $cmd == (-h|--help) ]] && cmd=help
-  if (( $+functions[plugin-$cmd] )); then
-    "plugin-$cmd" "$@"
+  if (( $+functions[-plugin-$cmd] )); then
+    "-plugin-$cmd" "$@"
   else
     print "plugin: command not found '$cmd'."
   fi
