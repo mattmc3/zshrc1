@@ -30,16 +30,16 @@ function z1_init_environment {
   setopt combining_chars       # Combine 0-len chars with the base character (eg: accents).
   setopt interactive_comments  # Enable comments in interactive shell.
   setopt rc_quotes             # Allow 'Hitchhikers''s Guide' instead of 'Hitchhikers'\''s Guide'.
-  unsetopt mail_warning        # Don't print a warning message if a mail file has been accessed.
-  unsetopt beep                # Don't beep on error in line editor.
+  setopt NO_mail_warning       # Don't print a warning message if a mail file has been accessed.
+  setopt NO_beep               # Don't beep on error in line editor.
 
   # Set Zsh options related to job control.
-  setopt auto_resume             # Attempt to resume existing job before creating a new process.
-  setopt long_list_jobs          # List jobs in the long format by default.
-  setopt notify                  # Report status of background jobs immediately.
-  unsetopt bg_nice               # Don't run all background jobs at a lower priority.
-  unsetopt check_jobs            # Don't report on jobs when shell exit.
-  unsetopt hup                   # Don't kill jobs on shell exit.
+  setopt auto_resume           # Attempt to resume existing job before creating a new process.
+  setopt long_list_jobs        # List jobs in the long format by default.
+  setopt notify                # Report status of background jobs immediately.
+  setopt NO_bg_nice            # Don't run all background jobs at a lower priority.
+  setopt NO_check_jobs         # Don't report on jobs when shell exit.
+  setopt NO_hup                # Don't kill jobs on shell exit.
 
   # Set common variables if they have not already been set.
   export EDITOR=${EDITOR:-vim}
@@ -91,8 +91,8 @@ function z1_init_history {
   setopt hist_save_no_dups       # Do not write a duplicate event to the history file.
   setopt hist_verify             # Do not execute immediately upon history expansion.
   setopt inc_append_history      # Write to the history file immediately, not when the shell exits.
-  unsetopt hist_beep             # Don't beep when accessing non-existent history.
-  unsetopt share_history         # Don't share history between all sessions.
+  setopt NO_hist_beep            # Don't beep when accessing non-existent history.
+  setopt NO_share_history        # Don't share history between all sessions.
 
   # Path to the history file.
   zstyle -s ':zshrc1:history' histfile 'HISTFILE' || HISTFILE=$__zsh_user_data_dir/zsh_history
@@ -121,8 +121,8 @@ function z1_init_directory {
   setopt multios                 # Write to multiple descriptors.
   setopt extended_glob           # Use extended globbing syntax.
   setopt glob_dots               # Don't hide dotfiles from glob patterns.
-  unsetopt clobber               # Don't overwrite files with >. Use >| to bypass.
-  unsetopt rm_star_silent        # Ask for confirmation for `rm *' or `rm path/*'
+  setopt NO_clobber              # Don't overwrite files with >. Use >| to bypass.
+  setopt NO_rm_star_silent       # Ask for confirmation for `rm *' or `rm path/*'
 
   # Set directory aliases.
   if ! zstyle -t ':zshrc1:directory:alias' skip; then
@@ -258,8 +258,8 @@ function zle-keymap-select {
 # Init terminal line editor.
 function z1_init_editor {
   # Set Zsh editor options.
-  unsetopt beep                  # Beep on error in line editor.
-  unsetopt flow_control          # Allow the usage of ^Q/^S in the context of zsh.
+  setopt NO_beep                 # Beep on error in line editor.
+  setopt NO_flow_control         # Allow the usage of ^Q/^S in the context of zsh.
 
   # Treat these characters as part of a word.
   zstyle -s ':zshrc1:editor' wordchars 'WORDCHARS' || WORDCHARS='*?_-.[]~&;!#$%^(){}<>'
@@ -528,8 +528,8 @@ function z1_init_completion {
   setopt auto_param_slash        # If completed parameter is a directory, add a trailing slash.
   setopt complete_in_word        # Complete from both ends of a word.
   setopt path_dirs               # Perform path search even on command names with slashes.
-  unsetopt flow_control          # Disable start/stop characters in shell editor.
-  unsetopt menu_complete         # Do not autoselect the first completion entry.
+  setopt NO_flow_control         # Disable start/stop characters in shell editor.
+  setopt NO_menu_complete        # Do not autoselect the first completion entry.
 
   # Add Fish-like custom completions directory.
   fpath=($__zsh_config_dir/completions(/N) $fpath)
