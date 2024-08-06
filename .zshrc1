@@ -1,8 +1,9 @@
 #!/bin/zsh
 # .zshrc1
-# > A powerful starter .zshrc
+# > First things first - start your .zshrc off right
 # Project Home: https://github.com/mattmc3/zshrc1
 
+# Make a directory from a variable name.
 function mkdirvar {
   local zdirvar
   for zdirvar in $@; do
@@ -10,6 +11,7 @@ function mkdirvar {
   done
 }
 
+# Init common environment variables.
 function z1_init_environment {
   if zstyle -T ':zshrc1:environment' use-xdg-basedirs; then
     export XDG_CONFIG_HOME=${XDG_CONFIG_HOME:-$HOME/.config}
@@ -75,6 +77,7 @@ function z1_init_environment {
   path=($HOME/{,s}bin(N) $path)
 }
 
+# Init common history options, variables, and aliases.
 function z1_init_history {
   # Set Zsh options related to history.
   setopt bang_hist               # Treat the '!' character specially during expansion.
@@ -108,6 +111,7 @@ function z1_init_history {
   fi
 }
 
+# Init common directory options and aliases.
 function z1_init_directory {
   # Set Zsh options related to directories, globbing, and I/O.
   setopt auto_pushd              # Make cd push the old directory onto the dirstack.
@@ -133,6 +137,7 @@ function z1_init_directory {
   fi
 }
 
+# Init terminal colors.
 function z1_init_color {
   # Built-in zsh colors.
   autoload -Uz colors && colors
@@ -190,14 +195,17 @@ function z1_init_color {
   zstyle ':completion:*:default' list-colors ${(s.:.)LS_COLORS}
 }
 
+# Check term family.
 function is-term-family {
   [[ $TERM = $1 || $TERM = $1-* ]]
 }
 
+# Check if tmux.
 function is-tmux {
   is-term-family tmux || [[ -n "$TMUX" ]]
 }
 
+# Update cursor style.
 function update-cursor-style {
   # We currently only support the xterm family of terminals
   if ! is-term-family xterm && ! is-term-family rxvt && ! is-tmux; then
@@ -216,7 +224,7 @@ function update-cursor-style {
   fi
 }
 
-# Enables terminal application mode
+# Enable terminal application mode.
 function zle-line-init {
   # The terminal must be in application mode when ZLE is active for $terminfo
   # values to be valid.
@@ -229,7 +237,7 @@ function zle-line-init {
   zle update-cursor-style
 }
 
-# Disables terminal application mode
+# Disable terminal application mode.
 function zle-line-finish {
   # The terminal must be in application mode when ZLE is active for $terminfo
   # values to be valid.
@@ -239,7 +247,7 @@ function zle-line-finish {
   fi
 }
 
-# Resets the prompt when the keymap changes
+# Reset the prompt when the keymap changes.
 function zle-keymap-select {
   zle update-cursor-style
 
@@ -247,6 +255,7 @@ function zle-keymap-select {
   zle -R
 }
 
+# Init terminal line editor.
 function z1_init_editor {
   # Set Zsh editor options.
   unsetopt beep                  # Beep on error in line editor.
@@ -369,6 +378,7 @@ function z1_init_editor {
   fi
 }
 
+# Init unifying commands for cross-platform work.
 function z1_init_utility {
   # Use built-in paste magic.
   autoload -Uz bracketed-paste-url-magic
@@ -424,6 +434,7 @@ function z1_init_utility {
   fi
 }
 
+# Init Fish-like functions directory.
 function z1_init_zfunctions {
   # Which autoload functions directory to use? Use glob_subst to support '~'.
   if [[ -z "$ZFUNCDIR" ]]; then
@@ -440,6 +451,7 @@ function z1_init_zfunctions {
   done
 }
 
+# Make starship work with built-in prompt system.
 function prompt_starship_setup {
   if ! (( $+commands[starship] )); then
     echo >&2 "Starship prompt not installed. See https://starship.rs to install."
@@ -466,6 +478,7 @@ function prompt_starship_setup {
   eval "$(starship init zsh)"
 }
 
+# Init prompt system.
 function z1_init_prompt {
   # Expand parameters in prompt variables.
   setopt prompt_subst
@@ -490,6 +503,7 @@ function z1_init_prompt {
   fi
 }
 
+# Init Fish-like conf.d directory.
 function z1_init_confd {
   # Which conf.d directory to use? Use glob_subst to support '~'.
   local confd
@@ -505,6 +519,7 @@ function z1_init_confd {
   done
 }
 
+# Init Zsh completion.
 function z1_init_completion {
   # Set Zsh completion options (16.2.2: https://zsh.sourceforge.io/Doc/Release/Options.html).
   setopt always_to_end           # Move cursor to the end of a completed word.
