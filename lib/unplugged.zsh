@@ -138,6 +138,22 @@ function plugin-update {
   echo "Update complete."
 }
 
+function plugin-remove {
+  emulate -L zsh
+  setopt local_options $__plugin_zopts
+
+  local plugin ret=0
+  for plugin in $@; do
+    if [[ -d $(plugin-home)/$plugin/.git ]]; then
+      rm -rf -- $(plugin-home)/$plugin
+    else
+      print >&2 "Plugin not found: $(plugin-home)/$plugin..."
+      ret=1
+    fi
+  done
+  return $ret
+}
+
 function plugin-compile {
   emulate -L zsh; setopt local_options $__plugin_zopts
 
