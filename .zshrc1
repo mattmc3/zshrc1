@@ -3,100 +3,146 @@
 # > First things first - start your .zshrc off right
 # Project Home: https://github.com/mattmc3/zshrc1
 
+#region Setup zshrc1
+#
+typeset -g ZSHRC1="${(%):-%N}}"
+typeset -g ZSHRC1_VERSION="2.0.0"
+
+# Define core environment vars.
+export __zsh_config_dir=${ZDOTDIR:-${XDG_CONFIG_HOME:-$HOME/.config}/zsh}
+export __zsh_user_data_dir=${XDG_DATA_HOME:-$HOME/.local/share}/zsh
+export __zsh_cache_dir=${XDG_CACHE_HOME:-$HOME/.cache}/zsh
+mkdir -p $__zsh_config_dir $__zsh_user_data_dir $__zsh_cache_dir
+
+# Users can customize with zstyles if they want.
+[[ ! -r $__zsh_config_dir/.zstyles ]] || source $__zsh_config_dir/.zstyles
+
+# There's not really a post_zshrc event, so we're going to fake one by adding a
+# function called run_post_zshrc to the precmd event. That function only runs once,
+# and then unregisters itself. If the user wants to (or needs to because it doesn't
+# play well with a plugin), they can run it themselves manually at the end of their
+# .zshrc, and then it unregisters.
+
+# Define a variable to hold actions run during the post_zshrc event.
+typeset -ga post_zshrc_hook
+
+# Add our new event.
+function run_post_zshrc {
+  # Run anything attached to the post_zshrc hook
+  local fn
+  for fn in $post_zshrc_hook; do
+    #echo post_zshrc running "${=fn}"
+    "${=fn}"
+  done
+
+  # Now delete the precmd hook and self-remove this function and its list var so
+  # that it only runs once, and doesn't keep running on every future precmd event.
+  add-zsh-hook -d precmd run_post_zshrc
+  unfunction -- run_post_zshrc
+  unset -- post_zshrc_hook
+}
+add-zsh-hook precmd run_post_zshrc
+
+#
+#endregion
+#region Helper functions
+#
+
 # Make a directory from a variable name.
 function mkdirvar {
-  emulate -L zsh; setopt local_options extended_glob
+  emulate -L zsh
   local zdirvar
   for zdirvar in $@; do
     [[ -d "${(P)zdirvar}" ]] || mkdir -p "$(P){zdirvar}"
   done
 }
 
-# Init common helper functions.
-function z1_init_helpers {
-  # Check if a file can be autoloaded by trying to load it in a subshell.
-  function is-autoloadable {
-    ( unfunction "$1"; autoload -U +X "$1" ) &> /dev/null
-  }
-
-  # Checks if a name is a command, function, or alias.
-  function is-callable {
-    (( $+commands[$1] || $+functions[$1] || $+aliases[$1] || $+builtins[$1] ))
-  }
-
-  # Check whether a string represents "true" (1, y, yes, t, true, o, on).
-  function is-true {
-    [[ -n "$1" && "$1:l" == (1|y(es|)|t(rue|)|o(n|)) ]]
-  }
-
-  # OS checks.
-  function is-macos  { [[ "$OSTYPE" == darwin* ]] }
-  function is-linux  { [[ "$OSTYPE" == linux*  ]] }
-  function is-bsd    { [[ "$OSTYPE" == *bsd*   ]] }
-  function is-cygwin { [[ "$OSTYPE" == cygwin* ]] }
-  function is-termux { [[ "$OSTYPE" == linux-android ]] }
-
-  # Check term family.
-  function is-term-family {
-    [[ $TERM = $1 || $TERM = $1-* ]]
-  }
-
-  # Check if tmux.
-  function is-tmux {
-    is-term-family tmux || [[ -n "$TMUX" ]]
-  }
+# Check if a file can be autoloaded by trying to load it in a subshell.
+function is-autoloadable {
+  ( unfunction "$1"; autoload -U +X "$1" ) &> /dev/null
 }
 
-# Init common environment variables.
-function z1_init_environment {
-  if zstyle -T ':zshrc1:environment' use-xdg-basedirs; then
-    export XDG_CONFIG_HOME=${XDG_CONFIG_HOME:-$HOME/.config}
-    export XDG_CACHE_HOME=${XDG_CACHE_HOME:-$HOME/.cache}
-    export XDG_DATA_HOME=${XDG_DATA_HOME:-$HOME/.local/share}
-    export XDG_STATE_HOME=${XDG_STATE_HOME:-$HOME/.local/state}
-    mkdirvar XDG_{CONFIG,CACHE,DATA,STATE}_HOME
-  fi
+# Checks if a name is a command, function, or alias.
+function is-callable {
+  (( $+commands[$1] || $+functions[$1] || $+aliases[$1] || $+builtins[$1] ))
+}
 
-  # Set Zsh options related to globbing.
-  setopt extended_glob         # Use more awesome globbing features.
-  setopt glob_dots             # Include dotfiles when globbing.
-  setopt NO_rm_star_silent     # Ask for confirmation for `rm *' or `rm path/*'
+# Check whether a string represents "true" (1, y, yes, t, true, o, on).
+function is-true {
+  [[ -n "$1" && "$1:l" == (1|y(es|)|t(rue|)|o(n|)) ]]
+}
 
-  # Set general Zsh options.
-  setopt combining_chars       # Combine 0-len chars with the base character (eg: accents).
-  setopt interactive_comments  # Enable comments in interactive shell.
-  setopt rc_quotes             # Allow 'Hitchhikers''s Guide' instead of 'Hitchhikers'\''s Guide'.
-  setopt NO_mail_warning       # Don't print a warning message if a mail file has been accessed.
-  setopt NO_beep               # Don't beep on error in line editor.
+# OS checks.
+function is-macos  { [[ "$OSTYPE" == darwin* ]] }
+function is-linux  { [[ "$OSTYPE" == linux*  ]] }
+function is-bsd    { [[ "$OSTYPE" == *bsd*   ]] }
+function is-cygwin { [[ "$OSTYPE" == cygwin* ]] }
+function is-termux { [[ "$OSTYPE" == linux-android ]] }
 
-  # Set Zsh options related to job control.
-  setopt auto_resume           # Attempt to resume existing job before creating a new process.
-  setopt long_list_jobs        # List jobs in the long format by default.
-  setopt notify                # Report status of background jobs immediately.
-  setopt NO_bg_nice            # Don't run all background jobs at a lower priority.
-  setopt NO_check_jobs         # Don't report on jobs when shell exit.
-  setopt NO_hup                # Don't kill jobs on shell exit.
+# Check term family.
+function is-term-family {
+  [[ $TERM = $1 || $TERM = $1-* ]]
+}
 
-  # Set common variables if they have not already been set.
-  export EDITOR=${EDITOR:-vim}
-  export VISUAL=${VISUAL:-vim}
-  export PAGER=${PAGER:-less}
-  [[ "$OSTYPE" == darwin* ]] && export BROWSER=${BROWSER:-open}
-  export LANG=${LANG:-en_US.UTF-8}
+# Check if tmux.
+function is-tmux {
+  is-term-family tmux || [[ -n "$TMUX" ]]
+}
 
-  # Set the Less input preprocessor.
-  # Try both `lesspipe` and `lesspipe.sh` as either might exist on a system.
-  if [[ -z "$LESSOPEN" ]] && (( $#commands[(i)lesspipe(|.sh)] )); then
-    export LESSOPEN="| /usr/bin/env $commands[(i)lesspipe(|.sh)] %s 2>&-"
-  fi
-  export LESS="${LESS:--g -i -M -R -S -w -z-4}"
+#
+#endregion
+#region Environment and envvars
+#
 
-  # Ensure path arrays do not contain duplicates.
-  typeset -gU cdpath fpath mailpath path
+if zstyle -T ':zshrc1:environment' use-xdg-basedirs; then
+  export XDG_CONFIG_HOME=${XDG_CONFIG_HOME:-$HOME/.config}
+  export XDG_CACHE_HOME=${XDG_CACHE_HOME:-$HOME/.cache}
+  export XDG_DATA_HOME=${XDG_DATA_HOME:-$HOME/.local/share}
+  export XDG_STATE_HOME=${XDG_STATE_HOME:-$HOME/.local/state}
+  mkdirvar XDG_{CONFIG,CACHE,DATA,STATE}_HOME
+fi
 
-  # Add /usr/local to path.
-  path=(/usr/local/{,s}bin(N) $path)
+# Set Zsh options related to globbing.
+setopt extended_glob         # Use more awesome globbing features.
+setopt glob_dots             # Include dotfiles when globbing.
+setopt NO_rm_star_silent     # Ask for confirmation for `rm *' or `rm path/*'
 
+# Set general Zsh options.
+setopt combining_chars       # Combine 0-len chars with the base character (eg: accents).
+setopt interactive_comments  # Enable comments in interactive shell.
+setopt rc_quotes             # Allow 'Hitchhikers''s Guide' instead of 'Hitchhikers'\''s Guide'.
+setopt NO_mail_warning       # Don't print a warning message if a mail file has been accessed.
+setopt NO_beep               # Don't beep on error in line editor.
+
+# Set Zsh options related to job control.
+setopt auto_resume           # Attempt to resume existing job before creating a new process.
+setopt long_list_jobs        # List jobs in the long format by default.
+setopt notify                # Report status of background jobs immediately.
+setopt NO_bg_nice            # Don't run all background jobs at a lower priority.
+setopt NO_check_jobs         # Don't report on jobs when shell exit.
+setopt NO_hup                # Don't kill jobs on shell exit.
+
+# Set common variables if they have not already been set.
+export EDITOR=${EDITOR:-vim}
+export VISUAL=${VISUAL:-vim}
+export PAGER=${PAGER:-less}
+[[ "$OSTYPE" == darwin* ]] && export BROWSER=${BROWSER:-open}
+export LANG=${LANG:-en_US.UTF-8}
+
+# Set the Less input preprocessor.
+# Try both `lesspipe` and `lesspipe.sh` as either might exist on a system.
+if [[ -z "$LESSOPEN" ]] && (( $#commands[(i)lesspipe(|.sh)] )); then
+  export LESSOPEN="| /usr/bin/env $commands[(i)lesspipe(|.sh)] %s 2>&-"
+fi
+export LESS="${LESS:--g -i -M -R -S -w -z-4}"
+
+# Ensure path arrays do not contain duplicates.
+typeset -gU cdpath fpath mailpath path
+
+# Add /usr/local to path.
+path=(/usr/local/{,s}bin(N) $path)
+
+() {
   # Setup homebrew if it exists on the system.
   local brew_owner; local -aU brew_cmds
   brew_cmds=(
@@ -116,94 +162,104 @@ function z1_init_environment {
       alias brew="sudo -Hu '$brew_owner' brew"
     fi
   fi
-
-  # Set the list of directories that Zsh searches for programs.
-  typeset -gaU prepath
-  if [[ "${#prepath}" -eq 0 ]]; then
-    zstyle -s ':zshrc1:environment' 'prepath' 'prepath' \
-    || prepath=(
-        $HOME/{,s}bin(N)
-        $HOME/.local/{,s}bin(N)
-      )
-  fi
-
-  # If path gets prepended and is now out of order, do `path=($prepath $path)`.
-  path=($prepath $path)
 }
 
-# Init common history options, variables, and aliases.
-function z1_init_history {
-  # Set Zsh options related to history.
-  setopt bang_hist               # Treat the '!' character specially during expansion.
-  setopt extended_history        # Write the history file in the ':start:elapsed;command' format.
-  setopt hist_expire_dups_first  # Expire a duplicate event first when trimming history.
-  setopt hist_find_no_dups       # Do not display a previously found event.
-  setopt hist_ignore_all_dups    # Delete an old recorded event if a new event is a duplicate.
-  setopt hist_ignore_dups        # Do not record an event that was just recorded again.
-  setopt hist_ignore_space       # Do not record an event starting with a space.
-  setopt hist_reduce_blanks      # Remove extra blanks from commands added to the history list.
-  setopt hist_save_no_dups       # Do not write a duplicate event to the history file.
-  setopt hist_verify             # Do not execute immediately upon history expansion.
-  setopt inc_append_history      # Write to the history file immediately, not when the shell exits.
-  setopt NO_hist_beep            # Don't beep when accessing non-existent history.
-  setopt NO_share_history        # Don't share history between all sessions.
+# Set the list of directories that Zsh searches for programs.
+typeset -gaU prepath
+if [[ "${#prepath}" -eq 0 ]]; then
+  zstyle -s ':zshrc1:environment' 'prepath' 'prepath' \
+  || prepath=(
+      $HOME/{,s}bin(N)
+      $HOME/.local/{,s}bin(N)
+    )
+fi
 
-  # Set the path to the default history file.
-  : ${__zsh_user_data_dir:=${XDG_DATA_HOME:-$HOME/.local/share}/zsh}
-  if ! zstyle -s ':zshrc1:history' histfile 'HISTFILE'; then
-    if zstyle -T ':zshrc1:history' use-xdg-basedirs; then
-      HISTFILE="${__zsh_user_data_dir}/zsh_history"
-    else
-      HISTFILE="${ZDOTDIR:-$HOME}/.zsh_history"
-    fi
+# If path gets prepended and is now out of order, do `path=($prepath $path)`.
+path=($prepath $path)
+
+#
+#endregion
+#region History
+#
+
+# Set Zsh options related to history.
+setopt bang_hist               # Treat the '!' character specially during expansion.
+setopt extended_history        # Write the history file in the ':start:elapsed;command' format.
+setopt hist_expire_dups_first  # Expire a duplicate event first when trimming history.
+setopt hist_find_no_dups       # Do not display a previously found event.
+setopt hist_ignore_all_dups    # Delete an old recorded event if a new event is a duplicate.
+setopt hist_ignore_dups        # Do not record an event that was just recorded again.
+setopt hist_ignore_space       # Do not record an event starting with a space.
+setopt hist_reduce_blanks      # Remove extra blanks from commands added to the history list.
+setopt hist_save_no_dups       # Do not write a duplicate event to the history file.
+setopt hist_verify             # Do not execute immediately upon history expansion.
+setopt inc_append_history      # Write to the history file immediately, not when the shell exits.
+setopt NO_hist_beep            # Don't beep when accessing non-existent history.
+setopt NO_share_history        # Don't share history between all sessions.
+
+# Set the path to the default history file.
+: ${__zsh_user_data_dir:=${XDG_DATA_HOME:-$HOME/.local/share}/zsh}
+if ! zstyle -s ':zshrc1:history' histfile 'HISTFILE'; then
+  if zstyle -T ':zshrc1:history' use-xdg-basedirs; then
+    HISTFILE="${__zsh_user_data_dir}/zsh_history"
+  else
+    HISTFILE="${ZDOTDIR:-$HOME}/.zsh_history"
   fi
+fi
 
-  # Make sure the user didn't store an empty history file, or a literal '~',
-  # and that the history path exists. Basically, protect the user from themselves.
-  HISTFILE="${~HISTFILE}"
-  [[ -d "${HISTFILE:h}" ]] || mkdir -p "${HISTFILE:h}"
+# Make sure the user didn't store an empty history file, or a literal '~',
+# and that the history path exists. Basically, protect the user from themselves.
+HISTFILE="${~HISTFILE}"
+[[ -d "${HISTFILE:h}" ]] || mkdir -p "${HISTFILE:h}"
 
-  # History file size (default 1000).
-  zstyle -s ':zshrc1:history' savehist 'SAVEHIST' || SAVEHIST=100000
+# History file size (default 1000).
+zstyle -s ':zshrc1:history' savehist 'SAVEHIST' || SAVEHIST=100000
 
-  # Session history size, default: 2000).
-  zstyle -s ':zshrc1:history' histsize 'HISTSIZE' || HISTSIZE=20000
+# Session history size, default: 2000).
+zstyle -s ':zshrc1:history' histsize 'HISTSIZE' || HISTSIZE=20000
 
-  # Set history aliases.
-  if ! zstyle -t ':zshrc1:history:alias' skip; then
-    alias hist='fc -li'
-    alias history-stat="history 0 | awk '{print \$2}' | sort | uniq -c | sort -n -r | head"
-  fi
-}
+# Set history aliases.
+if ! zstyle -t ':zshrc1:history:alias' skip; then
+  alias hist='fc -li'
+  alias history-stat="history 0 | awk '{print \$2}' | sort | uniq -c | sort -n -r | head"
+fi
 
-# Init common directory options and aliases.
-function z1_init_directory {
-  # Set Zsh options related to directories, globbing, and I/O.
-  setopt auto_pushd         # Make cd push the old directory onto the dirstack.
-  setopt pushd_minus        # Exchanges meanings of +/- when navigating the dirstack.
-  setopt pushd_silent       # Do not print the directory stack after pushd or popd.
-  setopt pushd_to_home      # Push to home directory when no argument is given.
-  setopt multios            # Write to multiple descriptors.
-  setopt extended_glob      # Use extended globbing syntax.
-  setopt glob_dots          # Don't hide dotfiles from glob patterns.
-  setopt NO_clobber         # Don't overwrite files with >. Use >| to bypass.
-  setopt NO_rm_star_silent  # Ask for confirmation for `rm *' or `rm path/*'
+#
+#endregion
+#region Directory
+#
 
-  # Set directory aliases.
-  if ! zstyle -t ':zshrc1:directory:alias' skip; then
-    alias -- -='cd -'
-    alias dirh='dirs -v'
-    local i dotdot=('..')
-    for i in {1..9}; do
-      alias "$i"="cd -${i}"             # dirstack aliases (eg: "3"="cd -3")
-      alias -g "..$i"=${(pj:/:)dotdot}  # backref aliases (eg: "..3"="../../..")
-      dotdot+=('..')
-    done
-  fi
-}
+# Set Zsh options related to directories, globbing, and I/O.
+setopt auto_pushd         # Make cd push the old directory onto the dirstack.
+setopt pushd_minus        # Exchanges meanings of +/- when navigating the dirstack.
+setopt pushd_silent       # Do not print the directory stack after pushd or popd.
+setopt pushd_to_home      # Push to home directory when no argument is given.
+setopt multios            # Write to multiple descriptors.
+setopt extended_glob      # Use extended globbing syntax.
+setopt glob_dots          # Don't hide dotfiles from glob patterns.
+setopt NO_clobber         # Don't overwrite files with >. Use >| to bypass.
+setopt NO_rm_star_silent  # Ask for confirmation for `rm *' or `rm path/*'
 
-# Init terminal colors.
-function z1_init_color {
+# Set directory aliases.
+if ! zstyle -t ':zshrc1:directory:alias' skip; then
+  alias -- -='cd -'
+  alias dirh='dirs -v'
+
+  _dotdot=('..')
+  for _index in {1..9}; do
+    alias "$_index"="cd -${_index}"         # dirstack aliases (eg: "3"="cd -3")
+    alias -g "..$_index"=${(pj:/:)_dotdot}  # backref aliases (eg: "..3"="../../..")
+    _dotdot+=('..')
+  done
+  unset _dotdot _index
+fi
+
+#
+#endregion
+#region Colors
+#
+
+() {
   # Built-in zsh colors.
   autoload -Uz colors && colors
 
@@ -257,6 +313,11 @@ function z1_init_color {
   zstyle ':completion:*:default' list-colors ${(s.:.)LS_COLORS}
 }
 
+#
+#endregion
+#region Editor
+#
+
 # Update cursor style.
 function update-cursor-style {
   # We currently only support the xterm family of terminals
@@ -308,7 +369,7 @@ function zle-keymap-select {
 }
 
 # Init terminal line editor.
-function z1_init_editor {
+() {
   # Set Zsh editor options.
   setopt NO_beep                 # Beep on error in line editor.
   setopt NO_flow_control         # Allow the usage of ^Q/^S in the context of zsh.
@@ -430,77 +491,84 @@ function z1_init_editor {
   fi
 }
 
-# Init unifying commands for cross-platform work.
-function z1_init_utility {
-  # Use built-in paste magic.
-  autoload -Uz bracketed-paste-url-magic
-  zle -N bracketed-paste bracketed-paste-url-magic
-  autoload -Uz url-quote-magic
-  zle -N self-insert url-quote-magic
+#
+#endregion
+#region Utility
+#
 
-  # Load more specific 'run-help' function from $fpath.
-  (( $+aliases[run-help] )) && unalias run-help && autoload -Uz run-help
-  alias help=run-help
+# Use built-in paste magic.
+autoload -Uz bracketed-paste-url-magic
+zle -N bracketed-paste bracketed-paste-url-magic
+autoload -Uz url-quote-magic
+zle -N self-insert url-quote-magic
 
-  # Make ls more useful on non-BSD systems.
-  if (( ! $+commands[dircolors] )) && [[ "$OSTYPE" != darwin* ]]; then
-    alias ls="${aliases[ls]:-ls} --group-directories-first"
+# Load more specific 'run-help' function from $fpath.
+(( $+aliases[run-help] )) && unalias run-help && autoload -Uz run-help
+alias help=run-help
+
+# Make ls more useful on non-BSD systems.
+if (( ! $+commands[dircolors] )) && [[ "$OSTYPE" != darwin* ]]; then
+  alias ls="${aliases[ls]:-ls} --group-directories-first"
+fi
+
+# Ensure python commands exist.
+if (( $+commands[python3] )) && ! (( $+commands[python] )); then
+  alias python=python3
+fi
+if (( $+commands[pip3] )) && ! (( $+commands[pip] )); then
+  alias pip=pip3
+fi
+
+# Ensure envsubst command exists.
+if ! (( $+commands[envsubst] )); then
+  alias envsubst="python -c 'import os,sys;[sys.stdout.write(os.path.expandvars(l)) for l in sys.stdin]'"
+fi
+
+# Ensure hd (hex dump) command exists.
+if ! (( $+commands[hd] )) && (( $+commands[hexdump] )); then
+  alias hd="hexdump -C"
+fi
+
+# Ensure open command exists.
+if ! (( $+commands[open] )); then
+  if [[ "$OSTYPE" == cygwin* ]]; then
+    alias open='cygstart'
+  elif [[ "$OSTYPE" == linux-android ]]; then
+    alias open='termux-open'
+  elif (( $+commands[xdg-open] )); then
+    alias open='xdg-open'
   fi
+fi
 
-  # Ensure python commands exist.
-  if (( $+commands[python3] )) && ! (( $+commands[python] )); then
-    alias python=python3
-  fi
-  if (( $+commands[pip3] )) && ! (( $+commands[pip] )); then
-    alias pip=pip3
-  fi
-
-  # Ensure envsubst command exists.
-  if ! (( $+commands[envsubst] )); then
-    alias envsubst="python -c 'import os,sys;[sys.stdout.write(os.path.expandvars(l)) for l in sys.stdin]'"
-  fi
-
-  # Ensure hd (hex dump) command exists.
-  if ! (( $+commands[hd] )) && (( $+commands[hexdump] )); then
-    alias hd="hexdump -C"
-  fi
-
-  # Ensure open command exists.
-  if ! (( $+commands[open] )); then
-    if [[ "$OSTYPE" == cygwin* ]]; then
-      alias open='cygstart'
-    elif [[ "$OSTYPE" == linux-android ]]; then
-      alias open='termux-open'
-    elif (( $+commands[xdg-open] )); then
-      alias open='xdg-open'
+# Ensure pbcopy/pbpaste commands exist.
+if ! (( $+commands[pbcopy] )); then
+  if [[ "$OSTYPE" == cygwin* ]]; then
+    alias pbcopy='tee > /dev/clipboard'
+    alias pbpaste='cat /dev/clipboard'
+  elif [[ "$OSTYPE" == linux-android ]]; then
+    alias pbcopy='termux-clipboard-set'
+    alias pbpaste='termux-clipboard-get'
+  elif (( $+commands[wl-copy] && $+commands[wl-paste] )); then
+    alias pbcopy='wl-copy'
+    alias pbpaste='wl-paste'
+  elif [[ -n $DISPLAY ]]; then
+    if (( $+commands[xclip] )); then
+      alias pbcopy='xclip -selection clipboard -in'
+      alias pbpaste='xclip -selection clipboard -out'
+    elif (( $+commands[xsel] )); then
+      alias pbcopy='xsel --clipboard --input'
+      alias pbpaste='xsel --clipboard --output'
     fi
   fi
+fi
 
-  # Ensure pbcopy/pbpaste commands exist.
-  if ! (( $+commands[pbcopy] )); then
-    if [[ "$OSTYPE" == cygwin* ]]; then
-      alias pbcopy='tee > /dev/clipboard'
-      alias pbpaste='cat /dev/clipboard'
-    elif [[ "$OSTYPE" == linux-android ]]; then
-      alias pbcopy='termux-clipboard-set'
-      alias pbpaste='termux-clipboard-get'
-    elif (( $+commands[wl-copy] && $+commands[wl-paste] )); then
-      alias pbcopy='wl-copy'
-      alias pbpaste='wl-paste'
-    elif [[ -n $DISPLAY ]]; then
-      if (( $+commands[xclip] )); then
-        alias pbcopy='xclip -selection clipboard -in'
-        alias pbpaste='xclip -selection clipboard -out'
-      elif (( $+commands[xsel] )); then
-        alias pbcopy='xsel --clipboard --input'
-        alias pbpaste='xsel --clipboard --output'
-      fi
-    fi
-  fi
-}
+#
+#endregion
+#region zfunctions
+#
 
 # Init Fish-like functions directory.
-function z1_init_zfunctions {
+() {
   # Which autoload functions directory to use? Use glob_subst to support '~'.
   if [[ -z "$ZFUNCDIR" ]]; then
     local ZFUNCDIR
@@ -516,47 +584,73 @@ function z1_init_zfunctions {
   done
 }
 
+#
+#endregion
+#region Prompt
+#
+
+# Wrap powerlevel10k prompt to support themes directory
+function prompt_p10k_setup {
+  if [[ -n "$1" ]]; then
+    local -a configs=($__zsh_config_dir/themes/$1.p10k.zsh(N))
+    (( $#configs )) && source $configs[1]
+  fi
+  prompt_powerlevel10k_setup
+}
+
 # Make starship work with built-in prompt system.
 function prompt_starship_setup {
-  if ! (( $+commands[starship] )); then
-    echo >&2 "Starship prompt not installed. See https://starship.rs to install."
-    return 1
-  fi
-
   # When loaded through the prompt command, these prompt_* options will be enabled
   prompt_opts=(cr percent sp subst)
 
   # Set the starship config based on the argument if provided.
-  local theme="$1"
-  if [[ -n "$theme" ]]; then
+  if [[ -n "$1" ]]; then
     local -a configs=(
-      $__zsh_config_dir/themes/${theme}.toml(N)
-      ${XDG_CONFIG_HOME:-$HOME/.config}/starship/${theme}.toml(N)
+      "$__zsh_config_dir/themes/${1}.toml"(N)
+      "${XDG_CONFIG_HOME:-$HOME/.config}/starship/${1}.toml"(N)
     )
-    if (( $#configs )); then
-      export STARSHIP_CONFIG=$configs[1]
-    else
-      unset STARSHIP_CONFIG
-    fi
+    (( $#configs )) && export STARSHIP_CONFIG=$configs[1]
   fi
 
-  eval "$(starship init zsh)"
+  # Initialize starship.
+  if zstyle -t ':zephyr:plugin:prompt' 'use-cache'; then
+    cached-eval 'starship-init-zsh' starship init zsh
+  else
+    source <(starship init zsh)
+  fi
 }
 
-# Init prompt system.
-function z1_init_prompt {
-  # Expand parameters in prompt variables.
-  setopt prompt_subst
+# Wrap promptinit.
+function promptinit {
+  # Initialize real built-in prompt system.
+  unfunction promptinit
+  autoload -Uz promptinit && promptinit
 
-  # Set 2 space indent for each new level in a multi-line script.
-  # This can then be overridden by a prompt, but is a better default than Zsh's.
+  # Hook P10k into Zsh's prompt system.
+  (( $+functions[prompt_powerlevel10k_setup] )) \
+    && prompt_themes+=( p10k ) \
+    || unfunction prompt_p10k_setup
+
+  # Hook starship into Zsh's prompt system.
+  (( $+commands[starship] )) \
+    && prompt_themes+=( starship ) \
+    || unfunction prompt_starship_setup
+
+  # Keep prompt array sorted.
+  prompt_themes=( "${(@on)prompt_themes}" )
+}
+
+function run_promptinit {
+  # Prompt options
+  setopt prompt_subst       # Expand parameters in prompt variables.
+  setopt transient_rprompt  # Remove right prompt artifacts from prior commands.
+
+  # Set 2 space indent for each new level in a multi-line script. This can then be
+  # overridden by a prompt or plugin, but is a better default than Zsh's.
   PS2='${${${(%):-%_}//[^ ]}// /  }    '
 
   # Initialize the built-in prompt system.
   autoload -Uz promptinit && promptinit
-
-  # Add zshrc1 prompts.
-  prompt_themes+=(starship)
 
   # Set the prompt if specified.
   local -a prompt_argv
@@ -567,45 +661,45 @@ function z1_init_prompt {
     prompt "$prompt_argv[@]"
   fi
 }
+post_zshrc_hook+=(run_promptinit)
 
-# Init Fish-like conf.d directory.
-function z1_init_confd {
-  # Which conf.d directory to use? Use glob_subst to support '~'.
-  local confd
-  zstyle -s ':zshrc1:confd' directory 'confd' || confd=$__zsh_config_dir/conf.d
-  confd=${~confd}
+#
+#endregion
+#region Completion
+#
 
-  # Source all scripts in conf.d.
-  local zrcfile
-  for zrcfile in $confd/*.{z,}sh(N); do
-    # ignore files that begin with ~
-    [[ ${zrcfile:t} == '~'* ]] && continue
-    source $zrcfile
-  done
+# Let's talk compinit... compinit works by finding _completion files in your fpath. That
+# means fpath needs to be fully populated prior to calling it. But sometimes you need to
+# call compdef before fpath is done being populated to define a completion (eg: plugins
+# do this). compinit has big chicken-and-egg problems. This code handles all those
+# completion use cases by wrapping compinit, queueing calls to compdef, and hooking the
+# real call to compinit to run post_zshrc.
+
+# Define compinit placeholder functions (compdef) so we can queue up calls.
+# That way when the real compinit is called, we can execute the queue.
+typeset -gHa __zshrc1_compdef_queue=()
+function compdef {
+  (( $# )) || return
+  local compdef_args=("${@[@]}")
+  __zshrc1_compdef_queue+=("$(typeset -p compdef_args)")
 }
 
-# Init Zsh completion.
-function z1_init_completion {
-  # Set Zsh completion options (16.2.2: https://zsh.sourceforge.io/Doc/Release/Options.html).
-  setopt always_to_end           # Move cursor to the end of a completed word.
-  setopt auto_list               # Automatically list choices on ambiguous completion.
-  setopt auto_menu               # Show completion menu on a successive tab press.
-  setopt auto_param_slash        # If completed parameter is a directory, add a trailing slash.
-  setopt complete_in_word        # Complete from both ends of a word.
-  setopt path_dirs               # Perform path search even on command names with slashes.
-  setopt NO_flow_control         # Disable start/stop characters in shell editor.
-  setopt NO_menu_complete        # Do not autoselect the first completion entry.
+# Wrap compinit temporarily so that when the real compinit call happens, the
+# queue of compdef calls is processed.
+function compinit {
+  unfunction compinit compdef &>/dev/null
+  autoload -Uz compinit && compinit "$@"
 
-  # Add Fish-like custom completions directory.
-  fpath=($__zsh_config_dir/completions(/N) $fpath)
+  # Apply all the queued compdefs.
+  local typedef_compdef_args
+  for typedef_compdef_args in $__zshrc1_compdef_queue; do
+    eval $typedef_compdef_args
+    compdef "$compdef_args[@]"
+  done
+  unset __zshrc1_compdef_queue
 
-  # Set completion zstyles.
-  local compstyle
-  zstyle -s ':zshrc1:completion' compstyle 'compstyle' || compstyle=zshrc1
-  (( $+functions[compstyle_${compstyle}_setup] )) && compstyle_${compstyle}_setup
-
-  # Initialize completions if the user didn't.
-  (( $+functions[compinit] )) || run_compinit
+  # We can run compinit early, and if we did we no longer need a post_zshrc hook.
+  post_zshrc_hook=(${post_zshrc_hook:#run_compinit})
 }
 
 function run_compinit {
@@ -613,6 +707,7 @@ function run_compinit {
   if [[ -z "$ZSH_COMPDUMP" ]]; then
     local ZSH_COMPDUMP
     if zstyle -T ':zshrc1:completion' use-xdg-basedirs; then
+      : ${__zsh_cache_dir:=${XDG_CACHE_HOME:-$HOME/.cache}/zsh}
       ZSH_COMPDUMP=$__zsh_cache_dir/compdump
     else
       ZSH_COMPDUMP=$HOME/.zcompdump
@@ -642,7 +737,46 @@ function run_compinit {
     fi
   } &!
 }
+post_zshrc_hook+=(run_compinit)
 
+() {
+  # Set Zsh completion options (16.2.2: https://zsh.sourceforge.io/Doc/Release/Options.html).
+  setopt always_to_end           # Move cursor to the end of a completed word.
+  setopt auto_list               # Automatically list choices on ambiguous completion.
+  setopt auto_menu               # Show completion menu on a successive tab press.
+  setopt auto_param_slash        # If completed parameter is a directory, add a trailing slash.
+  setopt complete_in_word        # Complete from both ends of a word.
+  setopt path_dirs               # Perform path search even on command names with slashes.
+  setopt NO_flow_control         # Disable start/stop characters in shell editor.
+  setopt NO_menu_complete        # Do not autoselect the first completion entry.
+
+  # Add completions for keg-only brews when available.
+  local brew_prefix
+  if (( $+commands[brew] )); then
+    brew_prefix=${HOMEBREW_PREFIX:-${HOMEBREW_REPOSITORY:-$commands[brew]:A:h:h}}
+    # $HOMEBREW_PREFIX defaults to $HOMEBREW_REPOSITORY but is explicitly set to
+    # /usr/local when $HOMEBREW_REPOSITORY is /usr/local/Homebrew.
+    # https://github.com/Homebrew/brew/blob/2a850e02d8f2dedcad7164c2f4b95d340a7200bb/bin/brew#L66-L69
+    [[ $brew_prefix == '/usr/local/Homebrew' ]] && brew_prefix=$brew_prefix:h
+
+    # Add brew locations to fpath
+    fpath=(
+      $brew_prefix/opt/curl/share/zsh/site-functions(/N)  # Add curl completions.
+      $brew_prefix/share/zsh/site-functions(-/FN)  # Add zsh completions.
+      $fpath
+    )
+  fi
+
+  # Add Fish-like custom completions directory.
+  fpath=($__zsh_config_dir/completions(/N) $fpath)
+}
+
+#
+#endregion
+#region CompStyles
+#
+
+# Define completion styles.
 function compstyle_zshrc1_setup {
   # Use caching to make completion for commands such as dpkg and apt usable.
   local zcompcache
@@ -719,9 +853,20 @@ function compstyle_zshrc1_setup {
   zstyle ':completion:*:man:*'      menu yes select
 }
 
-function z1_init_plugins {
-  0="${(%):-%x}}"
-  source ${0:A:h}/lib/unplugged.zsh
+() {
+  local compstyle
+  zstyle -s ':zshrc1:completion' compstyle 'compstyle' || compstyle=zshrc1
+  (( $+functions[compstyle_${compstyle}_setup] )) && compstyle_${compstyle}_setup
+}
+
+#
+#endregion
+#region Plugins
+#
+
+() {
+  [[ -r "${ZSHRC1:A:h}/lib/unplugged.zsh" ]] || return 1
+  source ${ZSHRC1:A:h}/lib/unplugged.zsh
 
   local -a clone_plugins path_plugins fpath_plugins zsh_plugins
   zstyle -a ':zshrc1:plugins:kind:clone' load 'clone_plugins'
@@ -737,32 +882,29 @@ function z1_init_plugins {
   plugin load $zsh_plugins
 }
 
-# Run zshrc1
-() {
-  typeset -g ZSHRC1_VERSION="1.0.1"
+#
+#endregion
+#region Zsh conf.d
+#
 
-  # Minimal required environment vars.
-  export __zsh_config_dir=${ZDOTDIR:-${XDG_CONFIG_HOME:-$HOME/.config}/zsh}
-  export __zsh_user_data_dir=${XDG_DATA_HOME:-$HOME/.local/share}/zsh
-  export __zsh_cache_dir=${XDG_CACHE_HOME:-$HOME/.cache}/zsh
-  mkdirvar __zsh_{config,user_data,cache}_dir
+function run_confd {
+  # Which conf.d directory to use? Use glob_subst to support '~'.
+  : ${__zsh_config_dir:=${ZDOTDIR:-${XDG_CONFIG_HOME:-$HOME/.config}/zsh}}
+  local confd
+  zstyle -s ':zshrc1:confd' directory 'confd' || confd=$__zsh_config_dir/conf.d
+  confd=${~confd}
 
-  # Users can customize with zstyles if they want.
-  [[ ! -r $__zsh_config_dir/.zstyles ]] || source $__zsh_config_dir/.zstyles
-
-  # Run inits.
-  z1_init_helpers
-  z1_init_environment
-  z1_init_history
-  z1_init_directory
-  z1_init_color
-  z1_init_editor
-  z1_init_utility
-  z1_init_zfunctions
-  z1_init_prompt
-  z1_init_plugins
-  z1_init_confd
-  z1_init_completion
+  # Source all scripts in conf.d.
+  local zrcfile
+  for zrcfile in $confd/*.{z,}sh(N); do
+    # ignore files that begin with ~
+    [[ "${zrcfile:t}" == '~'* ]] && continue
+    source "$zrcfile"
+  done
 }
+post_zshrc_hook+=(run_confd)
+
+#
+#endregion
 
 # vim: ft=zsh sw=2 ts=2 et

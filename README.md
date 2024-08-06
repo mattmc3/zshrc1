@@ -1,7 +1,7 @@
 # .zshrc1
 
 [![MIT License](https://img.shields.io/badge/license-MIT-007EC7.svg)](/LICENSE)
-![version](https://img.shields.io/badge/version-v1.0.1-orange)
+![version](https://img.shields.io/badge/version-v2.0.0-orange)
 
 > A powerful starter .zshrc
 
