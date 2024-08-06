@@ -3,17 +3,28 @@
 [![MIT License](https://img.shields.io/badge/license-MIT-007EC7.svg)](/LICENSE)
 ![version](https://img.shields.io/badge/version-v2.0.0-orange)
 
-> A powerful starter .zshrc
+> First things first - start your .zshrc off right
 
 ## Description
 
-`.zshrc1` is designed to be a portable, lightweight, ultra-fast, Zsh configuration in a single file. Equally useful on your desktop machine or on a remote server, zshrc1 enables much of the useful functionality already built into Zsh without the need for frameworks. And, it's ridiculously fast!
+`.zshrc1` is designed to be a portable, lightweight, ultra-fast, Zsh configuration in a
+single file. Equally useful on your desktop machine or on a remote server, zshrc1
+enables much of the useful functionality already built into Zsh without the need for
+frameworks. And, it's ridiculously fast!
 
-`.zshrc1`'s goal of giving you a great starter DIY Zsh experience in a single file stands in contrast to other full Zsh Frameworks like [Oh-My-Zsh][ohmyzsh] and [Prezto][prezto]. Those frameworks are nice if you want everything-and-the-kitchen-sink, but you pay a performance and complexity penalty for using these frameworks.
+`.zshrc1`'s goal of giving you a great starter DIY Zsh experience in a single file
+stands in contrast to other full Zsh Frameworks like [Oh-My-Zsh][ohmyzsh] and
+[Prezto][prezto]. Those frameworks are nice if you want everything-and-the-kitchen-sink,
+but you pay a performance and complexity penalty for using these frameworks.
 
-Many prefer to build their own Zsh config from scratch, but that can be a lot of work and often requires you to pull together functionality already baked into the Zsh frameworks you leave behind.
+Many prefer to build their own Zsh config from scratch, but that can be a lot of work
+and often requires you to pull together functionality already baked into the Zsh
+frameworks you leave behind.
 
-`.zshrc1` is simpler. Similar to [Grml's .zshrc][grml-zshrc], `.zshrc1` gives you everything you need for a full-featured Zsh config, but contained in one simple to grok Zsh include that will grow with you as you use Zsh. It is heavily inspired by the [Fish shell][fish].
+`.zshrc1` is simpler. Similar to [Grml's .zshrc][grml-zshrc], `.zshrc1` gives you
+everything you need for a full-featured Zsh config, but contained in one simple to grok
+Zsh include that will grow with you as you use Zsh. It is heavily inspired by the [Fish
+shell][fish].
 
 Feel free to use it as-is, build off it, or fork it and make it entirely your own.
 
