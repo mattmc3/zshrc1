@@ -717,16 +717,15 @@ function z1_init_plugins {
   0="${(%):-%x}}"
   source ${0:A:h}/lib/unplugged.zsh
 
-  local -a path_plugins=()
-  zstyle -a ':zshrc1:plugins:kind:path' load 'path_plugins'
-
-  local -a fpath_plugins=()
+  local -a clone_plugins path_plugins fpath_plugins zsh_plugins
+  zstyle -a ':zshrc1:plugins:kind:clone' load 'clone_plugins'
+  zstyle -a ':zshrc1:plugins:kind:path'  load 'path_plugins'
   zstyle -a ':zshrc1:plugins:kind:fpath' load 'fpath_plugins'
+  zstyle -a ':zshrc1:plugins:kind:zsh'   load 'zsh_plugins'
 
-  local -a zsh_plugins=()
-  zstyle -a ':zshrc1:plugins:kind:zsh' load 'zsh_plugins'
-
-  plugin clone $path_plugins $fpath_plugins $zsh_plugins
+  clone_plugins=($clone_plugins $path_plugins $fpath_plugins $zsh_plugins)
+  [[ "${#clone_plugins}" -gt 0 ]] || return
+  plugin clone $clone_plugins
   plugin load --kind path $path_plugins
   plugin load --kind fpath $fpath_plugins
   plugin load $zsh_plugins
