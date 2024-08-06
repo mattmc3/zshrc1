@@ -596,7 +596,7 @@ function z1_init_completion {
   # Set completion zstyles.
   local compstyle
   zstyle -s ':zshrc1:completion' compstyle 'compstyle' || compstyle=zshrc1
-  (( $+functions[compstyle_${ZSH_COMPSTYLE}_setup] )) && compstyle_${ZSH_COMPSTYLE}_setup
+  (( $+functions[compstyle_${compstyle}_setup] )) && compstyle_${compstyle}_setup
 
   # Initialize completions if the user didn't.
   (( $+functions[compinit] )) || run_compinit
@@ -639,12 +639,12 @@ function run_compinit {
 
 function compstyle_zshrc1_setup {
   # Use caching to make completion for commands such as dpkg and apt usable.
+  local zcompcache
+  zstyle -T ':zshrc1:completion' use-xdg-basedirs &&
+    zcompcache="$__zsh_cache_dir/zcompcache" ||
+    zcompcache=~/.zcompcache
+  zstyle ':completion::complete:*' cache-path "$zcompcache"
   zstyle ':completion::complete:*' use-cache on
-  if zstyle -T ':zshrc1:completion' use-xdg-basedirs; then
-    zstyle ':completion::complete:*' cache-path "$__zsh_cache_dir/compcache"
-  else
-    zstyle ':completion::complete:*' cache-path "$HOME/.zcompcache"
-  fi
 
   # Defaults.
   zstyle ':completion:*:default' list-prompt '%S%M matches%s'
