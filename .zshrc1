@@ -20,8 +20,8 @@ mkdir -p $__zsh_config_dir $__zsh_user_data_dir $__zsh_cache_dir
 # There's not really a post_zshrc event, so we're going to fake one by adding a
 # function called run_post_zshrc to the precmd event. That function only runs once,
 # and then unregisters itself. If the user wants to (or needs to because it doesn't
-# play well with a plugin), they can run it themselves manually at the end of their
-# .zshrc, and then it unregisters.
+# play well with a plugin), they can run it themselves manually at the very end of
+# their .zshrc, and then it unregisters the precmd event.
 
 # Define a variable to hold actions run during the post_zshrc event.
 typeset -ga post_zshrc_hook
@@ -31,7 +31,8 @@ function run_post_zshrc {
   # Run anything attached to the post_zshrc hook
   local fn
   for fn in $post_zshrc_hook; do
-    #echo post_zshrc running "${=fn}"
+    # Uncomment to debug:
+    # echo "post_zshrc is about to run: ${=fn}"
     "${=fn}"
   done
 
@@ -159,7 +160,7 @@ export LESS="${LESS:--g -i -M -R -S -w -z-4}"
 # Ensure path arrays do not contain duplicates.
 typeset -gU cdpath fpath mailpath path
 
-# Add /usr/local to path.
+# Add /usr/local/bin to path.
 path=(/usr/local/{,s}bin(N) $path)
 
 () {
