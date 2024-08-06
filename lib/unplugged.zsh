@@ -4,18 +4,18 @@ typeset -gHa __plugin_zopts=(extended_glob glob_dots no_monitor)
 function plugin-help {
   emulate -L zsh
   setopt local_options $__plugin_zopts
-  echo "usage: plugin <command>"
-  echo "       plugin load [--kind <path_fpath>] <plugins...>"
-  echo ""
-  echo "commands:"
-  echo "  help     print help"
-  echo "  clone    clone plugins"
-  echo "  load     load plugins"
-  echo "  list     list plugins"
-  echo "  home     print plugin home"
-  echo "  update   update plugins"
-  echo "  compile  compile plugins"
-  echo ""
+  print "usage: plugin <command>"
+  print "       plugin load [--kind <path_fpath>] <plugins...>"
+  print ""
+  print "commands:"
+  print "  help     print help"
+  print "  clone    clone plugins"
+  print "  load     load plugins"
+  print "  list     list plugins"
+  print "  home     print plugin home"
+  print "  update   update plugins"
+  print "  compile  compile plugins"
+  print ""
 }
 
 function plugin-clone {
@@ -34,7 +34,7 @@ function plugin-clone {
   for repo in $repos; do
     plugdir="$plugin_home/$repo"
     if [[ ! -d "$plugdir" ]]; then
-      echo "Cloning $repo..."
+      print "Cloning $repo..."
       (
         command git clone -q --depth 1 --recursive --shallow-submodules \
           "https://github.com/${repo}" "$plugdir"
@@ -47,7 +47,7 @@ function plugin-clone {
 
 function plugin-home {
   : ${__zsh_cache_dir:=${XDG_CACHE_HOME:-$HOME/.cache}/zsh}
-  [[ -n "$ZPLUGINDIR" ]] && echo "$ZPLUGINDIR" || echo "$__zsh_cache_dir/repos"
+  [[ -n "$ZPLUGINDIR" ]] && print "$ZPLUGINDIR" || print "$__zsh_cache_dir/repos"
 }
 
 function plugin-load {
@@ -71,7 +71,7 @@ function plugin-script {
   done
 
   if [[ -n "$badopt" ]]; then
-    echo >&2 "Invalid argument '$badopt'."
+    print >&2 "Invalid argument '$badopt'."
     return 1
   fi
 
@@ -81,7 +81,7 @@ function plugin-script {
 
   for plugin in $@; do
     if [[ -n "$kind" ]]; then
-      echo "$kind=(\$$kind $plugin_home/$plugin)"
+      print "$kind=(\$$kind $plugin_home/$plugin)"
     else
       inits=(
         $__zsh_config_dir/plugins/$plugin/${plugin:t}.{plugin.zsh,zsh-theme,zsh,sh}(N)
@@ -92,12 +92,12 @@ function plugin-script {
         ${plugin}(N)
       )
       if [[ $#inits -eq 0 ]]; then
-        echo >&2 "No plugin init found '$plugin'. Did you forget to clone?"
+        print >&2 "No plugin init found '$plugin'. Did you forget to clone?"
         continue
       fi
       plugin=$inits[1]
-      echo "fpath=(\$fpath $plugin:h)"
-      echo "$src $plugin"
+      print "fpath=(\$fpath $plugin:h)"
+      print "$src $plugin"
       [[ "$plugin:h:t" == zsh-defer ]] && src="zsh-defer ."
     fi
   done
@@ -108,7 +108,7 @@ function plugin-list {
   setopt local_options $__plugin_zopts
   local plugin_home="$(plugin-home)"
   for plugdir in "$plugin_home"/*/*/.git(N/); do
-    echo "${${plugdir:A:h}##$plugin_home/}"
+    print "${${plugdir:A:h}##$plugin_home/}"
   done
 }
 
@@ -119,17 +119,17 @@ function plugin-update {
   local plugdir oldsha newsha
   for plugdir in "$(plugin-home)"/*/*/.git(N/); do
     plugdir=${plugdir:A:h}
-    echo "Updating ${plugdir:h:t}/${plugdir:t}..."
+    print "Updating ${plugdir:h:t}/${plugdir:t}..."
     (
       oldsha="$(command git -C "$plugdir" rev-parse --short HEAD)"
       command git -C "$plugdir" pull --quiet --ff --depth 1 --rebase --autostash
       newsha="$(command git -C "$plugdir" rev-parse --short HEAD)"
-      [[ "$oldsha" == "$newsha" ]] || echo "Plugin updated: $plugdir:t ($oldsha -> $newsha)"
+      [[ "$oldsha" == "$newsha" ]] || print "Plugin updated: $plugdir:t ($oldsha -> $newsha)"
     ) &
   done
   wait
   plugin-compile
-  echo "Update complete."
+  print "Update complete."
 }
 
 function plugin-remove {
@@ -167,6 +167,6 @@ function plugin {
   if (( $+functions[plugin-$cmd] )); then
     "plugin-$cmd" "$@"
   else
-    echo "plugin: command not found '$cmd'."
+    print "plugin: command not found '$cmd'."
   fi
 }
