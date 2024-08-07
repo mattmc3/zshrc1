@@ -68,7 +68,7 @@ function cached-eval {
 
   : ${__zsh_cache_dir:=${XDG_CACHE_HOME:-$HOME/.cache}/zsh}
   local cmdname=$1; shift
-  local cachefile=$__zsh_cache_dir/cached/${cmdname}.zsh
+  local cachefile=$__zsh_cache_dir/cached-eval/${cmdname}.zsh
   local -a cached=($cachefile(Nmh-20))
   # If the file has no size (is empty), or is older than 20 hours re-gen the cache.
   if [[ ! -s $cachefile ]] || (( ! ${#cached} )); then
@@ -197,7 +197,7 @@ path=($prepath $path)
     $HOME/.linuxbrew/bin/brew(N)
     /opt/homebrew/bin/brew(N)
     /usr/local/bin/brew(N)
-    /home/linuxbrew/.linuxbrew/bin/brew(N)
+    #/home/linuxbrew/.linuxbrew/bin/brew(N)
   )
   (( ${#_brewcmd} )) || return 1
 
@@ -369,7 +369,7 @@ path=($prepath $path)
     )
     if (( $#_dircolors_cmds )); then
       if zstyle -t ':zephyr:plugin:color' 'use-cache'; then
-        cached-eval "$_dircolors_cmds[1]" $_dircolors_cmds[1] --sh
+        cached-eval "${_dircolors_cmds[1]:t}" "$_dircolors_cmds[1]" --sh
       else
         source <("$_dircolors_cmds[1]" --sh)
       fi
