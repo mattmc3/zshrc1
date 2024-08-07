@@ -115,7 +115,7 @@ function is-tmux {
 #region Environment and envvars
 #
 
-if zstyle -T ':zshrc1:environment' use-xdg-basedirs; then
+if zstyle -T ':zephyr:plugin:environment' use-xdg-basedirs; then
   export XDG_CONFIG_HOME=${XDG_CONFIG_HOME:-$HOME/.config}
   export XDG_CACHE_HOME=${XDG_CACHE_HOME:-$HOME/.cache}
   export XDG_DATA_HOME=${XDG_DATA_HOME:-$HOME/.local/share}
@@ -196,7 +196,7 @@ path=(/usr/local/{,s}bin(N) $path)
 # Set the list of directories that Zsh searches for programs.
 typeset -gaU prepath
 if [[ "${#prepath}" -eq 0 ]]; then
-  zstyle -s ':zshrc1:environment' 'prepath' 'prepath' \
+  zstyle -s ':zephyr:plugin:environment' 'prepath' 'prepath' \
   || prepath=(
       $HOME/{,s}bin(N)
       $HOME/.local/{,s}bin(N)
@@ -228,11 +228,11 @@ path=($prepath $path)
   setopt NO_share_history        # Don't share history between all sessions.
 
   # Set the path to the default history file.
-  if zstyle -s ':zshrc1:history' histfile 'HISTFILE'; then
+  if zstyle -s ':zephyr:plugin:history' histfile 'HISTFILE'; then
     # Make sure the user didn't store a HISTFILE with a leading '~'.
     HISTFILE="${~HISTFILE}"
   else
-    if zstyle -T ':zshrc1:history' use-xdg-basedirs; then
+    if zstyle -T ':zephyr:plugin:history' use-xdg-basedirs; then
       : ${__zsh_user_data_dir:=${XDG_DATA_HOME:-$HOME/.local/share}/zsh}
       HISTFILE="${__zsh_user_data_dir}/zsh_history"
     else
@@ -244,15 +244,15 @@ path=($prepath $path)
   [[ -d "${HISTFILE:h}" ]] || mkdir -p "${HISTFILE:h}"
 
   # Set history file size.
-  zstyle -s ':zshrc1:history' savehist 'SAVEHIST' \
+  zstyle -s ':zephyr:plugin:history' savehist 'SAVEHIST' \
     || SAVEHIST=100000
 
   # Set session history size.
-  zstyle -s ':zshrc1:history' histsize 'HISTSIZE' \
+  zstyle -s ':zephyr:plugin:history' histsize 'HISTSIZE' \
     || HISTSIZE=20000
 
   # Set history aliases.
-  if ! zstyle -t ':zshrc1:history:alias' skip; then
+  if ! zstyle -t ':zephyr:plugin:history:alias' skip; then
     alias hist='fc -li'
     alias history-stat="history 0 | awk '{print \$2}' | sort | uniq -c | sort -n -r | head"
   fi
@@ -276,7 +276,7 @@ path=($prepath $path)
   setopt NO_rm_star_silent  # Ask for confirmation for `rm *' or `rm path/*'
 
   # Set directory aliases.
-  if ! zstyle -t ':zshrc1:directory:alias' skip; then
+  if ! zstyle -t ':zephyr:plugin:directory:alias' skip; then
     alias -- -='cd -'
     alias dirh='dirs -v'
 
@@ -331,7 +331,7 @@ path=($prepath $path)
       $commands[dircolors](N) $commands[gdircolors](N)
     )
     if (( $#_dircolors_cmds )); then
-      if zstyle -t ':zshrc1:color' 'use-cache'; then
+      if zstyle -t ':zephyr:plugin:color' 'use-cache'; then
         cached-eval "$_dircolors_cmds[1]" $_dircolors_cmds[1] --sh
       else
         source <("$_dircolors_cmds[1]" --sh)
@@ -351,7 +351,7 @@ path=($prepath $path)
   fi
 
   # Set aliases.
-  if ! zstyle -t ':zshrc1:color:alias' skip; then
+  if ! zstyle -t ':zephyr:plugin:color:alias' skip; then
     # Print a simple colormap.
     alias colormap='for i in {0..255}; do print -Pn "%K{$i}  %k%F{$i}${(l:3::0:)i}%f " ${${(M)$((i%6)):#3}:+"\n"}; done'
 
@@ -396,7 +396,7 @@ path=($prepath $path)
   #
 
   # Treat these characters as part of a word.
-  zstyle -s ':zshrc1:editor' wordchars 'WORDCHARS' || \
+  zstyle -s ':zephyr:plugin:editor' wordchars 'WORDCHARS' || \
   WORDCHARS='*?_-.[]~&;!#$%^(){}<>'
 
   # Use human-friendly identifiers.
@@ -539,7 +539,7 @@ path=($prepath $path)
   # Expand aliases
   function glob-alias {
     local -a noexpand_aliases
-    zstyle -a ':zshrc1:editor:glob-alias' 'noexpand' 'noexpand_aliases' \
+    zstyle -a ':zephyr:plugin:editor:glob-alias' 'noexpand' 'noexpand_aliases' \
       || noexpand_aliases=()
 
     # Get last word to the left of the cursor:
@@ -638,7 +638,7 @@ path=($prepath $path)
   # Keybinds for emacs and vi insert mode
   for keymap in 'emacs' 'viins'; do
     # Expand .... to ../..
-    if zstyle -t ':zshrc1:editor' dot-expansion; then
+    if zstyle -t ':zephyr:plugin:editor' dot-expansion; then
       bindkey -M "$keymap" "." expand-dot-to-parent-directory-path
     fi
   done
@@ -649,12 +649,12 @@ path=($prepath $path)
   bindkey -M vicmd "#" vi-pound-insert
 
   # Do not expand .... to ../.. during incremental search.
-  if zstyle -t ':zshrc1:editor' dot-expansion; then
+  if zstyle -t ':zephyr:plugin:editor' dot-expansion; then
     bindkey -M isearch . self-insert 2> /dev/null
   fi
 
   # Expand aliases
-  if zstyle -t ':zshrc1:editor' glob-alias; then
+  if zstyle -t ':zephyr:plugin:editor' glob-alias; then
     # space expands all aliases, including global
     bindkey -M emacs " " glob-alias
     bindkey -M viins " " glob-alias
@@ -672,7 +672,7 @@ path=($prepath $path)
   #
 
   # Set the key layout.
-  zstyle -s ':zshrc1:editor' key-bindings 'key_bindings'
+  zstyle -s ':zephyr:plugin:editor' key-bindings 'key_bindings'
   if [[ "$key_bindings" == (emacs|) ]]; then
     bindkey -e
   elif [[ "$key_bindings" == vi ]]; then
@@ -776,7 +776,7 @@ path=($prepath $path)
   # Which autoload functions directory to use? Use glob_subst to support '~'.
   if [[ -z "$ZFUNCDIR" ]]; then
     local ZFUNCDIR
-    zstyle -s ':zshrc1:zfunctions' directory 'ZFUNCDIR' || ZFUNCDIR=$__zsh_config_dir/functions
+    zstyle -s ':zephyr:plugin:zfunctions' directory 'ZFUNCDIR' || ZFUNCDIR=$__zsh_config_dir/functions
     ZFUNCDIR=${~ZFUNCDIR}
   fi
 
@@ -825,7 +825,7 @@ function prompt_starship_setup {
   fi
 
   # Initialize starship.
-  if zstyle -t ':zshrc1:prompt' 'use-cache'; then
+  if zstyle -t ':zephyr:plugin:prompt' 'use-cache'; then
     cached-eval 'starship-init-zsh' starship init zsh
   else
     source <(starship init zsh)
@@ -861,7 +861,7 @@ function run_promptinit {
 
   # Set the prompt if specified.
   local -a prompt_argv
-  zstyle -a ':zshrc1:prompt' theme 'prompt_argv'
+  zstyle -a ':zephyr:plugin:prompt' theme 'prompt_argv'
   if [[ $TERM == (dumb|linux|*bsd*) ]]; then
     prompt 'off'
   elif (( $#prompt_argv > 0 )); then
@@ -913,7 +913,7 @@ function run_compinit {
   # Initialize the built-in Zsh completion system.
   if [[ -z "$ZSH_COMPDUMP" ]]; then
     local ZSH_COMPDUMP
-    if zstyle -T ':zshrc1:completion' use-xdg-basedirs; then
+    if zstyle -T ':zephyr:plugin:completion' use-xdg-basedirs; then
       : ${__zsh_cache_dir:=${XDG_CACHE_HOME:-$HOME/.cache}/zsh}
       ZSH_COMPDUMP=$__zsh_cache_dir/compdump
     else
@@ -1062,7 +1062,7 @@ function compstyle_zshrc1_setup {
 
 () {
   local compstyle
-  zstyle -s ':zshrc1:completion' compstyle 'compstyle' || compstyle=zshrc1
+  zstyle -s ':zephyr:plugin:completion' compstyle 'compstyle' || compstyle=zephyr
   (( $+functions[compstyle_${compstyle}_setup] )) && compstyle_${compstyle}_setup
 }
 
@@ -1076,10 +1076,10 @@ function compstyle_zshrc1_setup {
   source ${ZSHRC1:A:h}/lib/unplugged.zsh
 
   local -a clone_plugins path_plugins fpath_plugins zsh_plugins
-  zstyle -a ':zshrc1:plugins:kind:clone' load 'clone_plugins'
-  zstyle -a ':zshrc1:plugins:kind:path'  load 'path_plugins'
-  zstyle -a ':zshrc1:plugins:kind:fpath' load 'fpath_plugins'
-  zstyle -a ':zshrc1:plugins:kind:zsh'   load 'zsh_plugins'
+  zstyle -a ':zephyr:zsh-plugins:kind:clone' load 'clone_plugins'
+  zstyle -a ':zephyr:zsh-plugins:kind:path'  load 'path_plugins'
+  zstyle -a ':zephyr:zsh-plugins:kind:fpath' load 'fpath_plugins'
+  zstyle -a ':zephyr:zsh-plugins:kind:zsh'   load 'zsh_plugins'
 
   clone_plugins=($clone_plugins $path_plugins $fpath_plugins $zsh_plugins)
   [[ "${#clone_plugins}" -gt 0 ]] || return
@@ -1098,7 +1098,7 @@ function run_confd {
   # Which conf.d directory to use? Use glob_subst to support '~'.
   : ${__zsh_config_dir:=${ZDOTDIR:-${XDG_CONFIG_HOME:-$HOME/.config}/zsh}}
   local confd
-  zstyle -s ':zshrc1:confd' directory 'confd' || confd=$__zsh_config_dir/conf.d
+  zstyle -s ':zephyr:plugin:confd' directory 'confd' || confd=$__zsh_config_dir/conf.d
   confd=${~confd}
 
   # Source all scripts in conf.d.
