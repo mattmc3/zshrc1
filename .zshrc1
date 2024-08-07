@@ -211,47 +211,52 @@ path=($prepath $path)
 #region History
 #
 
-# Set Zsh options related to history.
-setopt bang_hist               # Treat the '!' character specially during expansion.
-setopt extended_history        # Write the history file in the ':start:elapsed;command' format.
-setopt hist_expire_dups_first  # Expire a duplicate event first when trimming history.
-setopt hist_find_no_dups       # Do not display a previously found event.
-setopt hist_ignore_all_dups    # Delete an old recorded event if a new event is a duplicate.
-setopt hist_ignore_dups        # Do not record an event that was just recorded again.
-setopt hist_ignore_space       # Do not record an event starting with a space.
-setopt hist_reduce_blanks      # Remove extra blanks from commands added to the history list.
-setopt hist_save_no_dups       # Do not write a duplicate event to the history file.
-setopt hist_verify             # Do not execute immediately upon history expansion.
-setopt inc_append_history      # Write to the history file immediately, not when the shell exits.
-setopt NO_hist_beep            # Don't beep when accessing non-existent history.
-setopt NO_share_history        # Don't share history between all sessions.
+() {
+  # Set Zsh options related to history.
+  setopt bang_hist               # Treat the '!' character specially during expansion.
+  setopt extended_history        # Write the history file in the ':start:elapsed;command' format.
+  setopt hist_expire_dups_first  # Expire a duplicate event first when trimming history.
+  setopt hist_find_no_dups       # Do not display a previously found event.
+  setopt hist_ignore_all_dups    # Delete an old recorded event if a new event is a duplicate.
+  setopt hist_ignore_dups        # Do not record an event that was just recorded again.
+  setopt hist_ignore_space       # Do not record an event starting with a space.
+  setopt hist_reduce_blanks      # Remove extra blanks from commands added to the history list.
+  setopt hist_save_no_dups       # Do not write a duplicate event to the history file.
+  setopt hist_verify             # Do not execute immediately upon history expansion.
+  setopt inc_append_history      # Write to the history file immediately, not when the shell exits.
+  setopt NO_hist_beep            # Don't beep when accessing non-existent history.
+  setopt NO_share_history        # Don't share history between all sessions.
 
-# Set the path to the default history file.
-: ${__zsh_user_data_dir:=${XDG_DATA_HOME:-$HOME/.local/share}/zsh}
-if ! zstyle -s ':zshrc1:history' histfile 'HISTFILE'; then
-  if zstyle -T ':zshrc1:history' use-xdg-basedirs; then
-    HISTFILE="${__zsh_user_data_dir}/zsh_history"
+  # Set the path to the default history file.
+  if zstyle -s ':zshrc1:history' histfile 'HISTFILE'; then
+    # Make sure the user didn't store a HISTFILE with a leading '~'.
+    HISTFILE="${~HISTFILE}"
   else
-    HISTFILE="${ZDOTDIR:-$HOME}/.zsh_history"
+    if zstyle -T ':zshrc1:history' use-xdg-basedirs; then
+      : ${__zsh_user_data_dir:=${XDG_DATA_HOME:-$HOME/.local/share}/zsh}
+      HISTFILE="${__zsh_user_data_dir}/zsh_history"
+    else
+      HISTFILE="${ZDOTDIR:-$HOME}/.zsh_history"
+    fi
   fi
-fi
 
-# Make sure the user didn't store an empty history file, or a literal '~',
-# and that the history path exists. Basically, protect the user from themselves.
-HISTFILE="${~HISTFILE}"
-[[ -d "${HISTFILE:h}" ]] || mkdir -p "${HISTFILE:h}"
+  # Make sure the HISTFILE's directory exists.
+  [[ -d "${HISTFILE:h}" ]] || mkdir -p "${HISTFILE:h}"
 
-# History file size (default 1000).
-zstyle -s ':zshrc1:history' savehist 'SAVEHIST' || SAVEHIST=100000
+  # Set history file size.
+  zstyle -s ':zshrc1:history' savehist 'SAVEHIST' \
+    || SAVEHIST=100000
 
-# Session history size, default: 2000).
-zstyle -s ':zshrc1:history' histsize 'HISTSIZE' || HISTSIZE=20000
+  # Set session history size.
+  zstyle -s ':zshrc1:history' histsize 'HISTSIZE' \
+    || HISTSIZE=20000
 
-# Set history aliases.
-if ! zstyle -t ':zshrc1:history:alias' skip; then
-  alias hist='fc -li'
-  alias history-stat="history 0 | awk '{print \$2}' | sort | uniq -c | sort -n -r | head"
-fi
+  # Set history aliases.
+  if ! zstyle -t ':zshrc1:history:alias' skip; then
+    alias hist='fc -li'
+    alias history-stat="history 0 | awk '{print \$2}' | sort | uniq -c | sort -n -r | head"
+  fi
+}
 
 #
 #endregion
@@ -552,71 +557,82 @@ function zle-keymap-select {
 #region Utility
 #
 
-# Use built-in paste magic.
-autoload -Uz bracketed-paste-url-magic
-zle -N bracketed-paste bracketed-paste-url-magic
-autoload -Uz url-quote-magic
-zle -N self-insert url-quote-magic
+() {
+  # Use built-in paste magic.
+  autoload -Uz bracketed-paste-url-magic
+  zle -N bracketed-paste bracketed-paste-url-magic
+  autoload -Uz url-quote-magic
+  zle -N self-insert url-quote-magic
 
-# Load more specific 'run-help' function from $fpath.
-(( $+aliases[run-help] )) && unalias run-help && autoload -Uz run-help
-alias help=run-help
+  # Load more specific 'run-help' function from $fpath.
+  (( $+aliases[run-help] )) && unalias run-help && autoload -Uz run-help
+  alias help=run-help
 
-# Make ls more useful on non-BSD systems.
-if (( ! $+commands[dircolors] )) && [[ "$OSTYPE" != darwin* ]]; then
-  alias ls="${aliases[ls]:-ls} --group-directories-first"
-fi
-
-# Ensure python commands exist.
-if (( $+commands[python3] )) && ! (( $+commands[python] )); then
-  alias python=python3
-fi
-if (( $+commands[pip3] )) && ! (( $+commands[pip] )); then
-  alias pip=pip3
-fi
-
-# Ensure envsubst command exists.
-if ! (( $+commands[envsubst] )); then
-  alias envsubst="python -c 'import os,sys;[sys.stdout.write(os.path.expandvars(l)) for l in sys.stdin]'"
-fi
-
-# Ensure hd (hex dump) command exists.
-if ! (( $+commands[hd] )) && (( $+commands[hexdump] )); then
-  alias hd="hexdump -C"
-fi
-
-# Ensure open command exists.
-if ! (( $+commands[open] )); then
-  if [[ "$OSTYPE" == cygwin* ]]; then
-    alias open='cygstart'
-  elif [[ "$OSTYPE" == linux-android ]]; then
-    alias open='termux-open'
-  elif (( $+commands[xdg-open] )); then
-    alias open='xdg-open'
+  # Make ls more useful.
+  if (( ! $+commands[dircolors] )) && [[ "$OSTYPE" != darwin* ]]; then
+    # Group dirs first on non-BSD systems
+    alias ls="${aliases[ls]:-ls} --group-directories-first"
   fi
-fi
+  # Show human readable file sizes.
+  alias ls="${aliases[ls]:-ls} -h"
 
-# Ensure pbcopy/pbpaste commands exist.
-if ! (( $+commands[pbcopy] )); then
-  if [[ "$OSTYPE" == cygwin* ]]; then
-    alias pbcopy='tee > /dev/clipboard'
-    alias pbpaste='cat /dev/clipboard'
-  elif [[ "$OSTYPE" == linux-android ]]; then
-    alias pbcopy='termux-clipboard-set'
-    alias pbpaste='termux-clipboard-get'
-  elif (( $+commands[wl-copy] && $+commands[wl-paste] )); then
-    alias pbcopy='wl-copy'
-    alias pbpaste='wl-paste'
-  elif [[ -n $DISPLAY ]]; then
-    if (( $+commands[xclip] )); then
-      alias pbcopy='xclip -selection clipboard -in'
-      alias pbpaste='xclip -selection clipboard -out'
-    elif (( $+commands[xsel] )); then
-      alias pbcopy='xsel --clipboard --input'
-      alias pbpaste='xsel --clipboard --output'
+  # Ensure python commands exist.
+  if (( $+commands[python3] )) && ! (( $+commands[python] )); then
+    alias python=python3
+  fi
+  if (( $+commands[pip3] )) && ! (( $+commands[pip] )); then
+    alias pip=pip3
+  fi
+
+  # Ensure envsubst command exists.
+  if ! (( $+commands[envsubst] )); then
+    alias envsubst="python -c 'import os,sys;[sys.stdout.write(os.path.expandvars(l)) for l in sys.stdin]'"
+  fi
+
+  # Ensure hd (hex dump) command exists.
+  if ! (( $+commands[hd] )) && (( $+commands[hexdump] )); then
+    alias hd="hexdump -C"
+  fi
+
+  # Ensure open command exists.
+  if ! (( $+commands[open] )); then
+    if [[ "$OSTYPE" == cygwin* ]]; then
+      alias open='cygstart'
+    elif [[ "$OSTYPE" == linux-android ]]; then
+      alias open='termux-open'
+    elif (( $+commands[xdg-open] )); then
+      alias open='xdg-open'
     fi
   fi
-fi
+
+  # Ensure pbcopy/pbpaste commands exist.
+  if ! (( $+commands[pbcopy] )); then
+    if [[ "$OSTYPE" == cygwin* ]]; then
+      alias pbcopy='tee > /dev/clipboard'
+      alias pbpaste='cat /dev/clipboard'
+    elif [[ "$OSTYPE" == linux-android ]]; then
+      alias pbcopy='termux-clipboard-set'
+      alias pbpaste='termux-clipboard-get'
+    elif (( $+commands[wl-copy] && $+commands[wl-paste] )); then
+      alias pbcopy='wl-copy'
+      alias pbpaste='wl-paste'
+    elif [[ -n $DISPLAY ]]; then
+      if (( $+commands[xclip] )); then
+        alias pbcopy='xclip -selection clipboard -in'
+        alias pbpaste='xclip -selection clipboard -out'
+      elif (( $+commands[xsel] )); then
+        alias pbcopy='xsel --clipboard --input'
+        alias pbpaste='xsel --clipboard --output'
+      fi
+    fi
+  fi
+
+  # Cross platform `sed -i` syntax.
+  function sedi {
+    # GNU/BSD
+    sed --version &>/dev/null && sed -i -- "$@" || sed -i "" "$@"
+  }
+}
 
 #
 #endregion
