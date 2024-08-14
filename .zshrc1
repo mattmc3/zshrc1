@@ -3,730 +3,265 @@
 # > First things first - start your .zshrc off right
 # Project Home: https://github.com/mattmc3/zshrc1
 
-#region Setup zshrc1
-#
-typeset -g ZSHRC1="${(%):-%N}}"
-typeset -g ZSHRC1_VERSION="2.0.0"
-
-# Define core environment vars.
-export __zsh_config_dir=${ZDOTDIR:-${XDG_CONFIG_HOME:-$HOME/.config}/zsh}
-export __zsh_user_data_dir=${XDG_DATA_HOME:-$HOME/.local/share}/zsh
-export __zsh_cache_dir=${XDG_CACHE_HOME:-$HOME/.cache}/zsh
-mkdir -p $__zsh_config_dir $__zsh_user_data_dir $__zsh_cache_dir
-
-# Users can customize with zstyles if they want.
-[[ ! -r $__zsh_config_dir/.zstyles ]] || source $__zsh_config_dir/.zstyles
-
-# There's not really a post_zshrc event, so we're going to fake one by adding a
-# function called run_post_zshrc to the precmd event. That function only runs once,
-# and then unregisters itself. If the user wants to (or needs to because it doesn't
-# play well with a plugin), they can run it themselves manually at the very end of
-# their .zshrc, and then it unregisters the precmd event.
-
-# Define a variable to hold actions run during the post_zshrc event.
-typeset -ga post_zshrc_hook
-
-# Add our new event.
-function run_post_zshrc {
-  # Run anything attached to the post_zshrc hook
-  local fn
-  for fn in $post_zshrc_hook; do
-    # Uncomment to debug:
-    # echo "post_zshrc is about to run: ${=fn}"
-    "${=fn}"
-  done
-
-  # Now delete the precmd hook and self-remove this function and its list var so
-  # that it only runs once, and doesn't keep running on every future precmd event.
-  add-zsh-hook -d precmd run_post_zshrc
-  unfunction -- run_post_zshrc
-  unset -- post_zshrc_hook
-}
-
-# Attach run_post_zshrc to built-in precmd.
-autoload -U add-zsh-hook
-add-zsh-hook precmd run_post_zshrc
-
-#
-#endregion
-#region Helper functions
-#
-
-# Make a directory from a variable name.
-function mkdirvar {
-  emulate -L zsh
-  local zdirvar
-  for zdirvar in $@; do
-    [[ -d "${(P)zdirvar}" ]] || mkdir -p "$(P){zdirvar}"
-  done
-}
-
-# Cache the results of an eval command
-function cached-eval {
-  emulate -L zsh; setopt local_options extended_glob
-  (( $# >= 2 )) || return 1
-
-  : ${__zsh_cache_dir:=${XDG_CACHE_HOME:-$HOME/.cache}/zsh}
-  local cmdname=$1; shift
-  local cachefile=$__zsh_cache_dir/cached-eval/${cmdname}.zsh
-  local -a cached=($cachefile(Nmh-20))
-  # If the file has no size (is empty), or is older than 20 hours re-gen the cache.
-  if [[ ! -s $cachefile ]] || (( ! ${#cached} )); then
-    mkdir -p ${cachefile:h}
-    "$@" >| $cachefile
-  fi
-  source $cachefile
-}
-
-# Check if a file can be autoloaded by trying to load it in a subshell.
-function is-autoloadable {
-  ( unfunction "$1"; autoload -U +X "$1" ) &> /dev/null
-}
-
-# Checks if a name is a command, function, or alias.
-function is-callable {
-  (( $+commands[$1] || $+functions[$1] || $+aliases[$1] || $+builtins[$1] ))
-}
-
-# Check whether a string represents "true" (1, y, yes, t, true, o, on).
-function is-true {
-  [[ -n "$1" && "$1:l" == (1|y(es|)|t(rue|)|o(n|)) ]]
-}
-
-# OS checks.
-function is-macos  { [[ "$OSTYPE" == darwin* ]] }
-function is-linux  { [[ "$OSTYPE" == linux*  ]] }
-function is-bsd    { [[ "$OSTYPE" == *bsd*   ]] }
-function is-cygwin { [[ "$OSTYPE" == cygwin* ]] }
-function is-termux { [[ "$OSTYPE" == linux-android ]] }
-
-# Check term family.
-function is-term-family {
-  [[ $TERM = $1 || $TERM = $1-* ]]
-}
-
-# Check if tmux.
-function is-tmux {
-  is-term-family tmux || [[ -n "$TMUX" ]]
-}
-
-#
-#endregion
-#region Environment and envvars
-#
-
-if zstyle -T ':zephyr:plugin:environment' use-xdg-basedirs; then
-  export XDG_CONFIG_HOME=${XDG_CONFIG_HOME:-$HOME/.config}
-  export XDG_CACHE_HOME=${XDG_CACHE_HOME:-$HOME/.cache}
-  export XDG_DATA_HOME=${XDG_DATA_HOME:-$HOME/.local/share}
-  export XDG_STATE_HOME=${XDG_STATE_HOME:-$HOME/.local/state}
-  mkdirvar XDG_{CONFIG,CACHE,DATA,STATE}_HOME
-fi
-
-# Set Zsh options related to globbing.
-setopt extended_glob         # Use more awesome globbing features.
-setopt glob_dots             # Include dotfiles when globbing.
-setopt NO_rm_star_silent     # Ask for confirmation for `rm *' or `rm path/*'
-
-# Set general Zsh options.
-setopt combining_chars       # Combine 0-len chars with the base character (eg: accents).
-setopt interactive_comments  # Enable comments in interactive shell.
-setopt rc_quotes             # Allow 'Hitchhikers''s Guide' instead of 'Hitchhikers'\''s Guide'.
-setopt NO_mail_warning       # Don't print a warning message if a mail file has been accessed.
-setopt NO_beep               # Don't beep on error in line editor.
-
-# Set Zsh options related to job control.
-setopt auto_resume           # Attempt to resume existing job before creating a new process.
-setopt long_list_jobs        # List jobs in the long format by default.
-setopt notify                # Report status of background jobs immediately.
-setopt NO_bg_nice            # Don't run all background jobs at a lower priority.
-setopt NO_check_jobs         # Don't report on jobs when shell exit.
-setopt NO_hup                # Don't kill jobs on shell exit.
-
-# Set common variables if they have not already been set.
-export EDITOR=${EDITOR:-vim}
-export VISUAL=${VISUAL:-vim}
-export PAGER=${PAGER:-less}
-[[ "$OSTYPE" == darwin* ]] && export BROWSER=${BROWSER:-open}
-export LANG=${LANG:-en_US.UTF-8}
-
-# Set the Less input preprocessor.
-# Try both `lesspipe` and `lesspipe.sh` as either might exist on a system.
-if [[ -z "$LESSOPEN" ]] && (( $#commands[(i)lesspipe(|.sh)] )); then
-  export LESSOPEN="| /usr/bin/env $commands[(i)lesspipe(|.sh)] %s 2>&-"
-fi
-export LESS="${LESS:--g -i -M -R -S -w -z-4}"
-
-# Reduce key delay
-export KEYTIMEOUT=${KEYTIMEOUT:-1}
-
-# Make Apple Terminal behave.
-if [[ "$OSTYPE" == darwin* ]]; then
-  export SHELL_SESSIONS_DISABLE=${SHELL_SESSIONS_DISABLE:-1}
-fi
-
-# Ensure path arrays do not contain duplicates.
-typeset -gU cdpath fpath mailpath path
-
-# Add /usr/local/bin to path.
-path=(/usr/local/{,s}bin(N) $path)
-
-# Set the list of directories that Zsh searches for programs.
-typeset -gaU prepath
-if [[ "${#prepath}" -eq 0 ]]; then
-  zstyle -s ':zephyr:plugin:environment' 'prepath' 'prepath' \
-  || prepath=(
-      $HOME/{,s}bin(N)
-      $HOME/.local/{,s}bin(N)
-    )
-fi
-
-# If path gets prepended and is now out of order, do `path=($prepath $path)`.
-path=($prepath $path)
-
-#
-#endregion
-#region homebrew
-
+# Init z1
 () {
-  # Where is brew?
-  # Setup homebrew if it exists on the system.
-  typeset -aU _brewcmd=(
-    $commands[brew]
-    $HOME/.homebrew/bin/brew(N)
-    $HOME/.linuxbrew/bin/brew(N)
-    /opt/homebrew/bin/brew(N)
-    /usr/local/bin/brew(N)
-    #/home/linuxbrew/.linuxbrew/bin/brew(N)
-  )
-  (( ${#_brewcmd} )) || return 1
+  typeset -g Z1_VERSION="0.0.1"
+  typeset -gaH __z1_opts=(extended_glob NO_monitor NO_xtrace NO_ksh_arrays)
 
-  # brew shellenv
-  if zstyle -t ':zephyr:plugin:homebrew' 'use-cache'; then
-    cached-eval 'brew_shellenv' $_brewcmd[1] shellenv
-  else
-    source <($_brewcmd[1] shellenv)
-  fi
-  unset _brewcmd
+  # Add variables for key Zsh directories.
+  export __zsh_config_dir=${ZDOTDIR:-${XDG_CONFIG_HOME:-$HOME/.config}/zsh}
+  export __zsh_user_data_dir=${XDG_DATA_HOME:-$HOME/.local/share}/zsh
+  export __zsh_cache_dir=${XDG_CACHE_HOME:-$HOME/.cache}/zsh
 
-  # Ensure user bins preceed homebrew in path.
-  path=($prepath $path)
-
-  # Default to no tracking.
-  HOMEBREW_NO_ANALYTICS=${HOMEBREW_NO_ANALYTICS:-1}
-
-  # Add brewed Zsh to fpath
-  if [[ -d "$HOMEBREW_PREFIX/share/zsh/site-functions" ]]; then
-    fpath+=("$HOMEBREW_PREFIX/share/zsh/site-functions")
-  fi
-
-  # Add keg-only completions to fpath
-  zstyle -a ':zephyr:plugin:homebrew' 'keg-only-brews' '_kegonly' \
-    || _kegonly=(curl ruby sqlite)
-  for _keg in $_kegonly; do
-    fpath=($HOMEBREW_PREFIX/opt/${_keg}/share/zsh/site-functions(/N) $fpath)
+  # Ensure Zsh directories exist.
+  local zdir
+  for zdir in __zsh_{config,user_data,cache}_dir; do
+    [[ -d "${(P)zdir}" ]] || mkdir -p ${(P)zdir}
   done
-  unset _keg{,only}
 
-  # Set aliases.
-  if ! zstyle -t ':zephyr:plugin:homebrew:alias' skip; then
-    alias brewup="brew update && brew upgrade && brew cleanup"
-    alias brewinfo="brew leaves | xargs brew desc --eval-all"
-    alias brewdeps='brew leaves | xargs brew deps --installed --for-each | awk ''{leaf=$1;$1=""; printf "%s\033[34m%s\033[0m\n",leaf,$0}'''
+  # Define Z1 paths
+  typeset -g Z1_{COMPLETIONS,CONFIGS,FUNCTION,REPO}_DIR
+  typeset -g Z1_{COMPSTYLE,THEME}
 
-    # Handle brew on multi-user systems.
-    _brew_owner="$(stat -f "%Su" "$HOMEBREW_PREFIX" 2>/dev/null)"
-    if [[ -n "$_brew_owner" ]] && [[ "$(whoami)" != "$_brew_owner" ]]; then
-      alias brew="sudo -Hu '$_brew_owner' brew"
+  # Directory for Zsh autoload functions.
+  zstyle -s ':z1:functions' dir 'Z1_FUNCTION_DIR' \
+    || Z1_FUNCTION_DIR=${Z1_FUNCTION_DIR:-$__zsh_config_dir/functions}
+
+  # Directory for cloned Zsh plugin repos.
+  zstyle -s ':z1:repos' dir 'Z1_REPO_DIR' \
+    || Z1_REPO_DIR=${Z1_REPO_DIR:-$__zsh_cache_dir/repos}
+
+  # Customize with zstyles.
+  [[ ! -r $__zsh_config_dir/.zstyles ]] || source $__zsh_config_dir/.zstyles
+}
+
+# z1_colorize: Add color to your terminal.
+function z1_colorize {
+  # Built-in zsh colors
+  autoload -Uz colors && colors
+
+  # colormap: Print a quick colormap.
+  function colormap {
+    for i in {0..255}; do
+      print -Pn "%K{$i}  %k%F{$i}${(l:3::0:)i}%f " ${${(M)$((i%6)):#3}:+$'\n'}
+    done
+  }
+
+  # Show man pages in color.
+  export LESS_TERMCAP_mb=$'\e[01;34m'      # mb:=start blink-mode (bold,blue)
+  export LESS_TERMCAP_md=$'\e[01;34m'      # md:=start bold-mode (bold,blue)
+  export LESS_TERMCAP_so=$'\e[00;47;30m'   # so:=start standout-mode (white bg, black fg)
+  export LESS_TERMCAP_us=$'\e[04;35m'      # us:=start underline-mode (underline magenta)
+  export LESS_TERMCAP_se=$'\e[0m'          # se:=end standout-mode
+  export LESS_TERMCAP_ue=$'\e[0m'          # ue:=end underline-mode
+  export LESS_TERMCAP_me=$'\e[0m'          # me:=end modes
+
+  # __memoize_cmd: Evaluate a command, cache its output, and use its cache for 20 hours.
+  function __memoize_cmd {
+    emulate -L zsh; setopt local_options $__z1_opts
+    local memofile=$__zsh_cache_dir/memoized/$1; shift
+    local -a cached=($memofile(Nmh-20))
+    if ! (( $#cached )); then
+      mkdir -p ${memofile:h}
+      "$@" >| $memofile
     fi
-    unset _brew_owner
+    source $memofile
+  }
+
+  # Set colors for grep and ls command using dircolors if available.
+  alias grep="${aliases[grep]:-grep} --color=auto"
+  if (( $+commands[gdircolors] )); then
+    __memoize_cmd 'gdircolors.zsh' gdircolors --sh
+    alias gls="${aliases[gls]:-gls} --group-directories-first --color=auto"
+  fi
+  if (( $+commands[dircolors] )); then
+    __memoize_cmd 'dircolors.zsh' dircolors --sh
+    alias ls="${aliases[ls]:-ls} --group-directories-first --color=auto"
+  else
+    alias ls="${aliases[ls]:-ls} -G"
+    export LSCOLORS=${LSCOLORS:-exfxcxdxbxGxDxabagacad}
   fi
 }
 
-#
-#endregion
-#region History
-#
+# z1_confd: Source Zsh config files in a conf.d directory.
+function z1_confd {
+  local confd zfile
+  zstyle -s ':z1:configs' dir 'confd' || confd=$__zsh_config_dir/conf.d
+  for zfile in $confd/*.zsh(N); do
+    [[ ${zfile:t} != '~'* ]] || continue
+    source $zfile
+  done
+}
 
-() {
-  # Set Zsh options related to history.
+# z1_completions: Setup Zsh completion system.
+function z1_completions {
+  # Set options related to the completions.
+  setopt always_to_end     # Move cursor to the end of a completed word.
+  setopt auto_list         # Automatically list choices on ambiguous completion.
+  setopt auto_menu         # Show completion menu on a successive tab press.
+  setopt auto_param_slash  # If completed param is a directory, add trailing slash.
+  setopt complete_in_word  # Complete from both ends of a word.
+  setopt path_dirs         # Perform path search even on command names with slashes.
+  setopt NO_flow_control   # Disable start/stop characters in shell editor.
+  setopt NO_menu_complete  # Do not autoselect the first completion entry.
+
+  # Add custom completions directory.
+  local compdir
+  zstyle -s ':z1:completions' dir 'compdir' || compdir=$__zsh_config_dir/completions
+  fpath=($compdir(/N) $fpath)
+
+  # Set completion zstyles.
+  local compstyle
+  zstyle -s ':z1:completion' compstyle 'compstyle' || compstyle=z1
+  (( $+functions[compstyle_${compstyle}_setup] )) && compstyle_${compstyle}_setup
+
+  # Initialize completions if the user didn't.
+  (( $+functions[compinit] )) || run_compinit
+}
+
+# z1_directory: Set options and aliases for file system.
+function z1_directory {
+  # Set options related to the file system, globbing, and directory stack.
+  setopt auto_pushd     # Make cd push the old directory onto the dirstack.
+  setopt pushd_minus    # Exchange meaning of +/- when navigating the dirstack.
+  setopt pushd_silent   # Do not print the directory stack after pushd or popd.
+  setopt pushd_to_home  # Push to home directory when no argument is given.
+  setopt extended_glob  # Use extended globbing syntax.
+  setopt glob_dots      # Don't hide dotfiles from glob patterns.
+  setopt multios        # Write to multiple descriptors.
+  setopt NO_clobber     # Don't overwrite files with >. Use >| to bypass.
+
+  # Show directory stack.
+  alias dirh='dirs -v'
+}
+
+# z1_editor: Setup editor and keybinds.
+function z1_editor {
+  # Allow mapping Ctrl+S and Ctrl+Q shortcuts
+  [[ -r ${TTY:-} && -w ${TTY:-} && $+commands[stty] == 1 ]] && stty -ixon <$TTY >$TTY
+
+  # No PS2
+  builtin zle -N z1_editor_no_ps2
+  bindkey '^J' z1_editor_no_ps2
+  bindkey '^M' z1_editor_no_ps2
+  bindkey -e
+}
+
+# z1_history: Set options, variables, and aliases for Zsh history.
+function z1_history {
   setopt bang_hist               # Treat the '!' character specially during expansion.
   setopt extended_history        # Write the history file in the ':start:elapsed;command' format.
   setopt hist_expire_dups_first  # Expire a duplicate event first when trimming history.
-  setopt hist_find_no_dups       # Do not display a previously found event.
-  setopt hist_ignore_all_dups    # Delete an old recorded event if a new event is a duplicate.
+  setopt hist_find_no_dups       # When using find, only display a command once.
   setopt hist_ignore_dups        # Do not record an event that was just recorded again.
   setopt hist_ignore_space       # Do not record an event starting with a space.
-  setopt hist_reduce_blanks      # Remove extra blanks from commands added to the history list.
-  setopt hist_save_no_dups       # Do not write a duplicate event to the history file.
   setopt hist_verify             # Do not execute immediately upon history expansion.
   setopt inc_append_history      # Write to the history file immediately, not when the shell exits.
-  setopt NO_hist_beep            # Don't beep when accessing non-existent history.
-  setopt NO_share_history        # Don't share history between all sessions.
+  setopt NO_share_history        # Do not share history between all sessions.
+  setopt NO_hist_beep            # Do not beep when accessing non-existent history.
 
-  # Set the path to the default history file.
-  if zstyle -s ':zephyr:plugin:history' histfile 'HISTFILE'; then
-    # Make sure the user didn't store a HISTFILE with a leading '~'.
-    HISTFILE="${~HISTFILE}"
-  else
-    if zstyle -T ':zephyr:plugin:history' use-xdg-basedirs; then
-      : ${__zsh_user_data_dir:=${XDG_DATA_HOME:-$HOME/.local/share}/zsh}
-      HISTFILE="${__zsh_user_data_dir}/zsh_history"
-    else
-      HISTFILE="${ZDOTDIR:-$HOME}/.zsh_history"
+  # Set the path to the history file.
+  zstyle -s ':z1:history' histfile 'HISTFILE' || HISTFILE="$__zsh_user_data_dir/zsh_history"
+  # Set the maximum number of events to save in the internal history.
+  zstyle -s ':z1:history' histsize 'HISTSIZE' || HISTSIZE=20000
+  # Set the maximum number of events to save in the history file.
+  zstyle -s ':z1:history' savehist 'SAVEHIST' || SAVEHIST=100000
+
+  # Use a better history command.
+  alias history='fc -li'
+}
+
+# z1_funcdir: Setup the autoload directory for Zsh functions.
+function z1_funcdir {
+  emulate -L zsh; setopt local_options $__z1_opts
+  local fndir zfuncdir
+  zstyle -s ':z1:functions' dir 'zfuncdir' || zfuncdir=$__zsh_config_dir/functions
+  for fndir in $zfuncdir(-/FN) $zfuncdir/*(-/FN); do
+    fpath=($fndir $fpath)
+    autoload -Uz $fndir/*~*/_*(N.:t)
+  done
+}
+
+# z1_plugins: Setup Zsh plugins.
+function z1_plugins {
+  emulate -L zsh; setopt local_options $__z1_opts
+
+  local repo_dir giturl
+  zstyle -s ':z1:repos' repo_dir 'repo_dir' || repo_dir=$__zsh_cache_dir/repos
+  zstyle -s ':z1:plugins' git_url  'git_url'  || git_url="https://github.com"
+
+  # Get all the different plugin types.
+  local -a {clone,path,fpath,zsh,defer}_plugins
+  zstyle -a ':z1:plugins:load:kind' clone 'clone_plugins'
+  zstyle -a ':z1:plugins:load:kind' path  'path_plugins'
+  zstyle -a ':z1:plugins:load:kind' fpath 'fpath_plugins'
+  zstyle -a ':z1:plugins:load:kind' zsh   'zsh_plugins'
+  zstyle -a ':z1:plugins:load:kind' defer 'defer_plugins'
+
+  # Combine for cloning missing ones.
+  local -a plugins=($clone_plugins $path_plugins $fpath_plugins $zsh_plugins $defer_plugins)
+
+  # Remove bare words ${(M)plugins:#*/*} and paths with leading slash ${plugins:#/*}.
+  # Then split/join to keep the 2-part user/repo form to bulk-clone repos.
+  local repo; local -aU repos
+  for repo in ${${(M)plugins:#*/*}:#/*}; do
+    repo=${(@j:/:)${(@s:/:)repo}[1,2]}
+    if [[ ! -d $ZSH_REPO_HOME/$repo ]]; then
+      (
+        command git clone -q --depth 1 --recursive --shallow-submodules \
+          $git_url/$repo $ZSH_REPO_HOME/$repo
+          plugin-compile $ZSH_REPO_HOME/$repo
+      ) &
     fi
-  fi
+  done
+  wait
+}
 
-  # Make sure the HISTFILE's directory exists.
-  [[ -d "${HISTFILE:h}" ]] || mkdir -p "${HISTFILE:h}"
+# z1_prompt: Setup built-in Zsh prompt system.
+function z1_prompt {
+  # Set prompt options.
+  setopt prompt_subst  # Expand parameters in prompt variables
 
-  # Set history file size.
-  zstyle -s ':zephyr:plugin:history' savehist 'SAVEHIST' \
-    || SAVEHIST=100000
+  # Initialize built-in prompt system.
+  autoload -Uz promptinit && promptinit
 
-  # Set session history size.
-  zstyle -s ':zephyr:plugin:history' histsize 'HISTSIZE' \
-    || HISTSIZE=20000
+  # Since we define prompt functions here and not in autoload function files in $fpath,
+  # we need to stick the theme's name into `$prompt_themes' ourselves, since promptinit
+  # does not pick them up otherwise.
+  prompt_themes+=( z1 )
+  # Also, keep the array sorted...
+  prompt_themes=( "${(@on)prompt_themes}" )
 
-  # Set history aliases.
-  if ! zstyle -t ':zephyr:plugin:history:alias' skip; then
-    alias hist='fc -li'
-    alias history-stat="history 0 | awk '{print \$2}' | sort | uniq -c | sort -n -r | head"
+  # Set prompt.
+  local -a prompt_argv
+  zstyle -a ':z1:prompt' theme 'prompt_argv'
+  if [[ $TERM == (dumb|linux|*bsd*) ]]; then
+    prompt 'off'
+  elif (( $#prompt_argv > 0 )); then
+    prompt "$prompt_argv[@]"
   fi
 }
 
-#
-#endregion
-#region Directory
-#
+# z1_utility: Set Zsh utilities and options.
+function z1_utility {
+  # 16.2.6 Input/Output
+  setopt interactive_comments    # Enable comments in interactive shell.
+  setopt rc_quotes               # Allow 'Hitchhiker''s Guide' instead of 'Hitchhiker'\''s Guide'.
+  setopt NO_mail_warning         # Don't print a warning if a mail file was accessed.
+  setopt NO_rm_star_silent       # Ask for confirmation for `rm *' or `rm path/*'
 
-() {
-  # Set Zsh options related to directories, globbing, and I/O.
-  setopt auto_pushd         # Make cd push the old directory onto the dirstack.
-  setopt pushd_minus        # Exchanges meanings of +/- when navigating the dirstack.
-  setopt pushd_silent       # Do not print the directory stack after pushd or popd.
-  setopt pushd_to_home      # Push to home directory when no argument is given.
-  setopt multios            # Write to multiple descriptors.
-  setopt extended_glob      # Use extended globbing syntax (#,~,^).
-  setopt glob_dots          # Don't hide dotfiles from glob patterns.
-  setopt NO_clobber         # Don't overwrite files with >. Use >| to bypass.
-  setopt NO_rm_star_silent  # Ask for confirmation for `rm *' or `rm path/*'
+  # 16.2.7 Job Control
+  setopt auto_resume             # Attempt to resume existing job before creating a new process.
+  setopt long_list_jobs          # List jobs in the long format by default.
+  setopt notify                  # Report status of background jobs immediately.
+  setopt NO_bg_nice              # Don't run all background jobs at a lower priority.
+  setopt NO_check_jobs           # Don't report on jobs when shell exit.
+  setopt NO_hup                  # Don't kill jobs on shell exit.
 
-  # Set directory aliases.
-  if ! zstyle -t ':zephyr:plugin:directory:alias' skip; then
-    alias -- -='cd -'
-    alias dirh='dirs -v'
+  # 16.2.12 Zle
+  setopt combining_chars         # Combine 0-len chars with base chars (eg: accents).
+  setopt NO_beep                 # Be quiet
 
-    _dotdot=".."
-    for _index in {1..9}; do
-      alias "$_index"="cd -${_index}"      # dirstack aliases (eg: "2"="cd -2")
-      alias -g "..${_index}"="${_dotdot}"  # backref aliases (eg: "..3"="../../..")
-      _dotdot+="/.."
-    done
-    unset _dotdot _index
-  fi
-
-  # Quickly go up any number of directories.
-  function up {
-    local parents="${1:-1}"
-    if [[ ! "$parents" -gt 0 ]]; then
-      echo >&2 "usage: up [<num>]"
-      return 1
-    fi
-    local dotdots=".."
-    while (( --parents )); do
-      dotdots+="/.."
-    done
-    cd "$dotdots"
-  }
-}
-
-#
-#endregion
-#region Colors
-#
-
-() {
-  # Return if requirements are not found.
-  [[ "$TERM" != 'dumb' ]] || return 1
-
-  # Built-in zsh colors.
-  autoload -Uz colors && colors
-
-  # Colorize man pages.
-  export LESS_TERMCAP_md=${LESS_TERMCAP_md:-$fg_bold[blue]}   # start bold
-  export LESS_TERMCAP_mb=${LESS_TERMCAP_mb:-$fg_bold[blue]}   # start blink
-  export LESS_TERMCAP_so=${LESS_TERMCAP_so:-$'\e[00;47;30m'}  # start standout: white bg, black fg
-  export LESS_TERMCAP_us=${LESS_TERMCAP_us:-$'\e[04;35m'}     # start underline: underline magenta
-  export LESS_TERMCAP_se=${LESS_TERMCAP_se:-$reset_color}     # end standout
-  export LESS_TERMCAP_ue=${LESS_TERMCAP_ue:-$reset_color}     # end underline
-  export LESS_TERMCAP_me=${LESS_TERMCAP_me:-$reset_color}     # end bold/blink
-
-  # Set LS_COLORS using (g)dircolors if found.
-  if [[ -z "$LS_COLORS" ]]; then
-    _dircolors_cmds=(
-      $commands[dircolors](N) $commands[gdircolors](N)
-    )
-    if (( $#_dircolors_cmds )); then
-      if zstyle -t ':zephyr:plugin:color' 'use-cache'; then
-        cached-eval "${_dircolors_cmds[1]:t}" "$_dircolors_cmds[1]" --sh
-      else
-        source <("$_dircolors_cmds[1]" --sh)
-      fi
-    fi
-    unset _dircolors_cmds
-
-    # Pick a reasonable default for LS_COLORS if it hasn't been set by this point.
-    export LS_COLORS="${LS_COLORS:-di=34:ln=35:so=32:pi=33:ex=31:bd=1;36:cd=1;33:su=30;41:sg=30;46:tw=30;42:ow=30;43}"
-  fi
-
-  # Missing dircolors is a good indicator of a BSD system. Set LSCOLORS for macOS/BSD.
-  if (( ! $+commands[dircolors] )); then
-    # For BSD systems, set LSCOLORS.
-    export CLICOLOR=${CLICOLOR:-1}
-    export LSCOLORS="${LSCOLORS:-exfxcxdxbxGxDxabagacad}"
-  fi
-
-  # Set aliases.
-  if ! zstyle -t ':zephyr:plugin:color:alias' skip; then
-    # Print a simple colormap.
-    alias colormap='for i in {0..255}; do print -Pn "%K{$i}  %k%F{$i}${(l:3::0:)i}%f " ${${(M)$((i%6)):#3}:+"\n"}; done'
-
-    # Set colors for grep.
-    alias grep="${aliases[grep]:-grep} --color=auto"
-
-    # Set colors for ls.
-    alias ls="${aliases[ls]:-ls} --color=auto"
-    if (( $+commands[gls] )); then
-      alias gls="${aliases[gls]:-gls} --color=auto"
-    fi
-
-    # Set colors for diff.
-    if command diff --color /dev/null{,} &>/dev/null; then
-      alias diff="${aliases[diff]:-diff} --color"
-    fi
-  fi
-
-  # Colorize completions.
-  zstyle ':completion:*:default' list-colors ${(s.:.)LS_COLORS}
-}
-
-#
-#endregion
-#region Editor
-#
-
-() {
-  # Return if requirements are not found.
-  [[ "$TERM" != 'dumb' ]] || return 1
-
-  #
-  # Options
-  #
-
-  # Set Zsh editor options.
-  setopt NO_beep                 # Do not beep on error in line editor.
-  setopt NO_flow_control         # Allow the usage of ^Q/^S in the context of zsh.
-
-  #
-  # Variables
-  #
-
-  # Treat these characters as part of a word.
-  zstyle -s ':zephyr:plugin:editor' wordchars 'WORDCHARS' || \
-  WORDCHARS='*?_-.[]~&;!#$%^(){}<>'
-
-  # Use human-friendly identifiers.
-  zmodload zsh/terminfo
-  typeset -gA key_info
-
-  # Modifiers
-  key_info=(
-    'Control' '\C-'
-    'Escape'  '\e'
-    'Meta'    '\M-'
-  )
-
-  # Basic keys
-  key_info+=(
-    'Backspace' "^?"
-    'Delete'    "^[[3~"
-    'F1'        "$terminfo[kf1]"
-    'F2'        "$terminfo[kf2]"
-    'F3'        "$terminfo[kf3]"
-    'F4'        "$terminfo[kf4]"
-    'F5'        "$terminfo[kf5]"
-    'F6'        "$terminfo[kf6]"
-    'F7'        "$terminfo[kf7]"
-    'F8'        "$terminfo[kf8]"
-    'F9'        "$terminfo[kf9]"
-    'F10'       "$terminfo[kf10]"
-    'F11'       "$terminfo[kf11]"
-    'F12'       "$terminfo[kf12]"
-    'Insert'    "$terminfo[kich1]"
-    'Home'      "$terminfo[khome]"
-    'PageUp'    "$terminfo[kpp]"
-    'End'       "$terminfo[kend]"
-    'PageDown'  "$terminfo[knp]"
-    'Up'        "$terminfo[kcuu1]"
-    'Left'      "$terminfo[kcub1]"
-    'Down'      "$terminfo[kcud1]"
-    'Right'     "$terminfo[kcuf1]"
-    'BackTab'   "$terminfo[kcbt]"
-  )
-
-  # Mod plus another key
-  key_info+=(
-    'AltLeft'         "${key_info[Escape]}${key_info[Left]} \e[1;3D"
-    'AltRight'        "${key_info[Escape]}${key_info[Right]} \e[1;3C"
-    'ControlLeft'     '\e[1;5D \e[5D \e\e[D \eOd'
-    'ControlRight'    '\e[1;5C \e[5C \e\e[C \eOc'
-    'ControlPageUp'   '\e[5;5~'
-    'ControlPageDown' '\e[6;5~'
-  )
-
-  #
-  # Functions
-  #
-
-  # Runs bindkey but for all of the keymaps. Running it with no arguments will
-  # print out the mappings for all of the keymaps.
-  function bindkey-all {
-    local keymap=''
-    for keymap in $(bindkey -l); do
-      [[ "$#" -eq 0 ]] && printf "#### %s\n" "${keymap}" 1>&2
-      bindkey -M "${keymap}" "$@"
-    done
-  }
-
-  function update-cursor-style {
-    # We currently only support the xterm family of terminals
-    if ! is-term-family xterm && ! is-term-family rxvt && ! is-tmux; then
-      return
-    fi
-
-    if bindkey -lL main | grep viins > /dev/null; then
-      # For vi-mode we
-      case $KEYMAP in
-        vicmd)      printf '\e[2 q';;
-        viins|main) printf '\e[6 q';;
-      esac
-    else
-      # If we're in emacs mode, we always want a line cursor
-      printf '\e[6 q'
-    fi
-  }
-  zle -N update-cursor-style
-
-  # Enables terminal application mode
-  function zle-line-init {
-    # The terminal must be in application mode when ZLE is active for $terminfo
-    # values to be valid.
-    if (( $+terminfo[smkx] )); then
-      # Enable terminal application mode.
-      echoti smkx
-    fi
-
-    # Ensure we have the correct cursor. We could probably do this less
-    # frequently, but this does what we need and shouldn't incur that much
-    # overhead.
-    zle update-cursor-style
-  }
-  zle -N zle-line-init
-
-  # Disables terminal application mode
-  function zle-line-finish {
-    # The terminal must be in application mode when ZLE is active for $terminfo
-    # values to be valid.
-    if (( $+terminfo[rmkx] )); then
-      # Disable terminal application mode.
-      echoti rmkx
-    fi
-  }
-  zle -N zle-line-finish
-
-  # Resets the prompt when the keymap changes
-  function zle-keymap-select {
-    zle update-cursor-style
-
-    zle reset-prompt
-    zle -R
-  }
-  zle -N zle-keymap-select
-
-  # Expands .... to ../..
-  function expand-dot-to-parent-directory-path {
-    if [[ $LBUFFER = *.. ]]; then
-      LBUFFER+='/..'
-    else
-      LBUFFER+='.'
-    fi
-  }
-  zle -N expand-dot-to-parent-directory-path
-
-  # Inserts 'sudo ' at the beginning of the line.
-  function prepend-sudo {
-    if [[ "$BUFFER" != su(do|)\ * ]]; then
-      BUFFER="sudo $BUFFER"
-      (( CURSOR += 5 ))
-    fi
-  }
-  zle -N prepend-sudo
-
-  # Expand aliases
-  function glob-alias {
-    local -a noexpand_aliases
-    zstyle -a ':zephyr:plugin:editor:glob-alias' 'noexpand' 'noexpand_aliases' \
-      || noexpand_aliases=()
-
-    # Get last word to the left of the cursor:
-    # (A) makes it an array even if there's only one element
-    # (z) splits into words using shell parsing
-    local word=${${(Az)LBUFFER}[-1]}
-    if [[ $noexpand_aliases[(Ie)$word] -eq 0 ]]; then
-      zle _expand_alias
-      # zle expand-word
-    fi
-    zle self-insert
-  }
-  zle -N glob-alias
-
-  # Toggle the comment character at the start of the line. This is meant to work
-  # around a buggy implementation of pound-insert in zsh.
-  #
-  # This is currently only used for the emacs keys because vi-pound-insert has
-  # been reported to work properly.
-  function pound-toggle {
-    if [[ "$BUFFER" = '#'* ]]; then
-      # Because of an oddity in how zsh handles the cursor when the buffer size
-      # changes, we need to make this check before we modify the buffer and let
-      # zsh handle moving the cursor back if it's past the end of the line.
-      if [[ $CURSOR != $#BUFFER ]]; then
-        (( CURSOR -= 1 ))
-      fi
-      BUFFER="${BUFFER:1}"
-    else
-      BUFFER="#$BUFFER"
-      (( CURSOR += 1 ))
-    fi
-  }
-  zle -N pound-toggle
-
-  #
-  # Init
-  #
-
-  # Reset to default key bindings
-  bindkey -d
-
-  #
-  # Keybinds
-  #
-
-  # Global keybinds
-  typeset -gA global_keybinds
-  global_keybinds=(
-    "$key_info[Home]"   beginning-of-line
-    "$key_info[End]"    end-of-line
-    "$key_info[Delete]" delete-char
-  )
-
-  # emacs and vi insert mode keybinds
-  typeset -gA viins_keybinds
-  viins_keybinds=(
-    "$key_info[Backspace]" backward-delete-char
-    "$key_info[Control]W"  backward-kill-word
-  )
-
-  # vi command mode keybinds
-  typeset -gA vicmd_keybinds
-  vicmd_keybinds=(
-    "$key_info[Delete]" delete-char
-  )
-
-  # Special case for ControlLeft and ControlRight because they have multiple
-  # possible binds.
-  for key in "${(s: :)key_info[ControlLeft]}" "${(s: :)key_info[AltLeft]}"; do
-    bindkey -M emacs "$key" emacs-backward-word
-    bindkey -M viins "$key" vi-backward-word
-    bindkey -M vicmd "$key" vi-backward-word
-  done
-  for key in "${(s: :)key_info[ControlRight]}" "${(s: :)key_info[AltRight]}"; do
-    bindkey -M emacs "$key" emacs-forward-word
-    bindkey -M viins "$key" vi-forward-word
-    bindkey -M vicmd "$key" vi-forward-word
-  done
-
-  # Bind all global and viins keys to the emacs keymap
-  for key bind in ${(kv)global_keybinds} ${(kv)viins_keybinds}; do
-    bindkey -M emacs "$key" "$bind"
-  done
-
-  # Bind all global, vi, and viins keys to the viins keymap
-  for key bind in ${(kv)global_keybinds} ${(kv)viins_keybinds}; do
-    bindkey -M viins "$key" "$bind"
-  done
-
-  # Bind all global, vi, and vicmd keys to the vicmd keymap
-  for key bind in ${(kv)global_keybinds} ${(kv)vicmd_keybinds}; do
-    bindkey -M vicmd "$key" "$bind"
-  done
-
-  # Keybinds for emacs and vi insert mode
-  for keymap in 'emacs' 'viins'; do
-    # Expand .... to ../..
-    if zstyle -t ':zephyr:plugin:editor' dot-expansion; then
-      bindkey -M "$keymap" "." expand-dot-to-parent-directory-path
-    fi
-  done
-
-  # Toggle comment at the start of the line. Note that we use pound-toggle for emacs
-  # mode, which is similar to pount insert, but meant to work around some bugs.
-  bindkey -M emacs "$key_info[Escape];" pound-toggle
-  bindkey -M vicmd "#" vi-pound-insert
-
-  # Do not expand .... to ../.. during incremental search.
-  if zstyle -t ':zephyr:plugin:editor' dot-expansion; then
-    bindkey -M isearch . self-insert 2> /dev/null
-  fi
-
-  # Expand aliases
-  if zstyle -t ':zephyr:plugin:editor' glob-alias; then
-    # space expands all aliases, including global
-    bindkey -M emacs " " glob-alias
-    bindkey -M viins " " glob-alias
-
-    # control-space to make a normal space
-    bindkey -M emacs "^ " magic-space
-    bindkey -M viins "^ " magic-space
-
-    # normal space during searches
-    bindkey -M isearch " " magic-space
-  fi
-
-  #
-  # Layout
-  #
-
-  # Set the key layout.
-  zstyle -s ':zephyr:plugin:editor' key-bindings 'key_bindings'
-  if [[ "$key_bindings" == (emacs|) ]]; then
-    bindkey -e
-  elif [[ "$key_bindings" == vi ]]; then
-    bindkey -v
-  else
-    print "editor: invalid key bindings: $key_bindings" >&2
-  fi
-
-  unset bind key{,_bindings} {vicmd,viins,global}_keybinds
-}
-
-#
-#endregion
-#region Utility
-#
-
-() {
   # Use built-in paste magic.
   autoload -Uz bracketed-paste-url-magic
   zle -N bracketed-paste bracketed-paste-url-magic
@@ -736,467 +271,16 @@ path=($prepath $path)
   # Load more specific 'run-help' function from $fpath.
   (( $+aliases[run-help] )) && unalias run-help && autoload -Uz run-help
   alias help=run-help
-
-  # Make ls more useful.
-  if (( ! $+commands[dircolors] )) && [[ "$OSTYPE" != darwin* ]]; then
-    # Group dirs first on non-BSD systems
-    alias ls="${aliases[ls]:-ls} --group-directories-first"
-  fi
-  # Show human readable file sizes.
-  alias ls="${aliases[ls]:-ls} -h"
-
-  # Ensure python commands exist.
-  if (( $+commands[python3] )) && ! (( $+commands[python] )); then
-    alias python=python3
-  fi
-  if (( $+commands[pip3] )) && ! (( $+commands[pip] )); then
-    alias pip=pip3
-  fi
-
-  # Ensure envsubst command exists.
-  if ! (( $+commands[envsubst] )); then
-    alias envsubst="python -c 'import os,sys;[sys.stdout.write(os.path.expandvars(l)) for l in sys.stdin]'"
-  fi
-
-  # Ensure hd (hex dump) command exists.
-  if ! (( $+commands[hd] )) && (( $+commands[hexdump] )); then
-    alias hd="hexdump -C"
-  fi
-
-  # Ensure open command exists.
-  if ! (( $+commands[open] )); then
-    if [[ "$OSTYPE" == cygwin* ]]; then
-      alias open='cygstart'
-    elif [[ "$OSTYPE" == linux-android ]]; then
-      alias open='termux-open'
-    elif (( $+commands[xdg-open] )); then
-      alias open='xdg-open'
-    fi
-  fi
-
-  # Ensure pbcopy/pbpaste commands exist.
-  if ! (( $+commands[pbcopy] )); then
-    if [[ "$OSTYPE" == cygwin* ]]; then
-      alias pbcopy='tee > /dev/clipboard'
-      alias pbpaste='cat /dev/clipboard'
-    elif [[ "$OSTYPE" == linux-android ]]; then
-      alias pbcopy='termux-clipboard-set'
-      alias pbpaste='termux-clipboard-get'
-    elif (( $+commands[wl-copy] && $+commands[wl-paste] )); then
-      alias pbcopy='wl-copy'
-      alias pbpaste='wl-paste'
-    elif [[ -n $DISPLAY ]]; then
-      if (( $+commands[xclip] )); then
-        alias pbcopy='xclip -selection clipboard -in'
-        alias pbpaste='xclip -selection clipboard -out'
-      elif (( $+commands[xsel] )); then
-        alias pbcopy='xsel --clipboard --input'
-        alias pbpaste='xsel --clipboard --output'
-      fi
-    fi
-  fi
-
-  # Cross platform `sed -i` syntax.
-  function sedi {
-    # GNU/BSD
-    sed --version &>/dev/null && sed -i -- "$@" || sed -i "" "$@"
-  }
 }
 
-#
-#endregion
-#region zfunctions
-#
-
-# Init Fish-like functions directory.
-() {
-  # Which autoload functions directory to use? Use glob_subst to support '~'.
-  if [[ -z "$ZFUNCDIR" ]]; then
-    local ZFUNCDIR
-    zstyle -s ':zephyr:plugin:zfunctions' directory 'ZFUNCDIR' || ZFUNCDIR=$__zsh_config_dir/functions
-    ZFUNCDIR=${~ZFUNCDIR}
-  fi
-
-  # Autoload a user functions directory.
-  local fndir
-  for fndir in $ZFUNCDIR(-/FN) $ZFUNCDIR/*(-/FN); do
-    fpath=($fndir $fpath)
-    autoload -Uz $fndir/*~*/_*(N.:t)
-  done
-}
-
-#
-#endregion
-#region Prompt
-#
-
-# Prompt options
-setopt prompt_subst       # Expand parameters in prompt variables.
-setopt transient_rprompt  # Remove right prompt artifacts from prior commands.
-
-# Set 2 space indent for each new level in a multi-line script. This can then be
-# overridden by a prompt or plugin, but is a better default than Zsh's.
-PS2='${${${(%):-%_}//[^ ]}// /  }    '
-
-# Wrap powerlevel10k prompt to support themes directory
-function prompt_p10k_setup {
-  if [[ -n "$1" ]]; then
-    local -a configs=($__zsh_config_dir/themes/$1.p10k.zsh(N))
-    (( $#configs )) && source $configs[1]
-  fi
-  prompt_powerlevel10k_setup
-}
-
-# Make starship work with built-in prompt system.
-function prompt_starship_setup {
-  # When loaded through the prompt command, these prompt_* options will be enabled
-  prompt_opts=(cr percent sp subst)
-
-  # Set the starship config based on the argument if provided.
-  if [[ -n "$1" ]]; then
-    local -a configs=(
-      "$__zsh_config_dir/themes/${1}.toml"(N)
-      "${XDG_CONFIG_HOME:-$HOME/.config}/starship/${1}.toml"(N)
-    )
-    (( $#configs )) && export STARSHIP_CONFIG=$configs[1]
-  fi
-
-  # Initialize starship.
-  if zstyle -t ':zephyr:plugin:prompt' 'use-cache'; then
-    cached-eval 'starship-init-zsh' starship init zsh
-  else
-    source <(starship init zsh)
-  fi
-}
-
-# Wrap promptinit.
-function promptinit {
-  # Initialize real built-in prompt system.
-  unfunction promptinit
-  autoload -Uz promptinit && promptinit
-
-  # Hook P10k into Zsh's prompt system.
-  (( $+functions[prompt_powerlevel10k_setup] )) \
-    && prompt_themes+=( p10k ) \
-    || unfunction prompt_p10k_setup
-
-  # Hook starship into Zsh's prompt system.
-  (( $+commands[starship] )) \
-    && prompt_themes+=( starship ) \
-    || unfunction prompt_starship_setup
-
-  # Keep prompt array sorted.
-  prompt_themes=( "${(@on)prompt_themes}" )
-
-  # We can run promptinit early, and if we did we no longer need a post_zshrc hook.
-  post_zshrc_hook=(${post_zshrc_hook:#run_promptinit})
-}
-
-function run_promptinit {
-  # Initialize the built-in prompt system.
-  autoload -Uz promptinit && promptinit
-
-  # Set the prompt if specified.
-  local -a prompt_argv
-  zstyle -a ':zephyr:plugin:prompt' theme 'prompt_argv'
-  if [[ $TERM == (dumb|linux|*bsd*) ]]; then
-    prompt 'off'
-  elif (( $#prompt_argv > 0 )); then
-    prompt "$prompt_argv[@]"
-  fi
-}
-post_zshrc_hook+=(run_promptinit)
-
-#
-#endregion
-#region compstyle
-#
-
-() {
-  function compstyle_zephyr_help {
-    echo "A composite of the grml, prezto, and ohmyzsh completions."
-    echo "You can invoke it with the following command:"
-    echo
-    echo "  compstyle zephyr"
-    echo
-    echo "More information available at: https://github.com/mattmc3/zephyr"
-  }
-
-  function compstyle_zephyr_setup {
-    # Pre-reqs.
-    : ${__zsh_cache_dir:=${XDG_CACHE_HOME:-$HOME/.cache}/zsh}
-    [[ -d $__zsh_cache_dir ]] || mkdir -p $__zsh_cache_dir
-
-    # Standard style used by default for 'list-colors'
-    LS_COLORS=${LS_COLORS:-'di=34:ln=35:so=32:pi=33:ex=31:bd=36;01:cd=33;01:su=31;40;07:sg=36;40;07:tw=32;40;07:ow=33;40;07:'}
-
-    # Defaults.
-    zstyle ':completion:*:default' list-colors ${(s.:.)LS_COLORS}
-    zstyle ':completion:*:default' list-prompt '%S%M matches%s'
-
-    # Use caching to make completion for commands such as dpkg and apt usable.
-    zstyle ':completion::complete:*' use-cache on
-    zstyle ':completion::complete:*' cache-path "$__zsh_cache_dir/zcompcache"
-
-    # Case-insensitive (all), partial-word, and then substring completion.
-    if zstyle -t ':zephyr:plugin:compstyle:*' case-sensitive; then
-      zstyle ':completion:*' matcher-list 'r:|=*' 'l:|=* r:|=*'
-      setopt case_glob
-    else
-      zstyle ':completion:*' matcher-list 'm:{a-zA-Z}={A-Za-z}' 'r:|=*' 'l:|=* r:|=*'
-      unsetopt case_glob
-    fi
-
-    # Group matches and describe.
-    zstyle ':completion:*:*:*:*:*' menu select
-    zstyle ':completion:*:matches' group 'yes'
-    zstyle ':completion:*:options' description 'yes'
-    zstyle ':completion:*:options' auto-description '%d'
-    zstyle ':completion:*:corrections' format ' %F{red}-- %d (errors: %e) --%f'
-    zstyle ':completion:*:descriptions' format ' %F{purple}-- %d --%f'
-    zstyle ':completion:*:messages' format ' %F{green} -- %d --%f'
-    zstyle ':completion:*:warnings' format ' %F{yellow}-- no matches found --%f'
-    zstyle ':completion:*' format ' %F{blue}-- %d --%f'
-    zstyle ':completion:*' group-name ''
-    zstyle ':completion:*' verbose yes
-
-    # Fuzzy match mistyped completions.
-    zstyle ':completion:*' completer _complete _match _approximate
-    zstyle ':completion:*:match:*' original only
-    zstyle ':completion:*:approximate:*' max-errors 1 numeric
-
-    # Increase the number of errors based on the length of the typed word. But make
-    # sure to cap (at 7) the max-errors to avoid hanging.
-    zstyle -e ':completion:*:approximate:*' max-errors 'reply=($((($#PREFIX+$#SUFFIX)/3>7?7:($#PREFIX+$#SUFFIX)/3))numeric)'
-
-    # Don't complete unavailable commands.
-    zstyle ':completion:*:functions' ignored-patterns '(_*|pre(cmd|exec))'
-
-    # Array completion element sorting.
-    zstyle ':completion:*:*:-subscript-:*' tag-order indexes parameters
-
-    # Directories
-    zstyle ':completion:*:*:cd:*' tag-order local-directories directory-stack path-directories
-    zstyle ':completion:*:*:cd:*:directory-stack' menu yes select
-    zstyle ':completion:*:-tilde-:*' group-order 'named-directories' 'path-directories' 'users' 'expand'
-    zstyle ':completion:*' squeeze-slashes true
-    zstyle ':completion:*' special-dirs ..
-
-    # History
-    zstyle ':completion:*:history-words' stop yes
-    zstyle ':completion:*:history-words' remove-all-dups yes
-    zstyle ':completion:*:history-words' list false
-    zstyle ':completion:*:history-words' menu yes
-
-    # Environment Variables
-    zstyle ':completion::*:(-command-|export):*' fake-parameters ${${${_comps[(I)-value-*]#*,}%%,*}:#-*-}
-
-    # Populate hostname completion. But allow ignoring custom entries from static
-    # */etc/hosts* which might be uninteresting.
-    zstyle -a ':zephyr:plugin:compstyle:*:hosts' etc-host-ignores '_etc_host_ignores'
-
-    zstyle -e ':completion:*:hosts' hosts 'reply=(
-      ${=${=${=${${(f)"$(cat {/etc/ssh/ssh_,~/.ssh/}known_hosts(|2)(N) 2> /dev/null)"}%%[#| ]*}//\]:[0-9]*/ }//,/ }//\[/ }
-      ${=${(f)"$(cat /etc/hosts(|)(N) <<(ypcat hosts 2> /dev/null))"}%%(\#${_etc_host_ignores:+|${(j:|:)~_etc_host_ignores}})*}
-      ${=${${${${(@M)${(f)"$(cat ~/.ssh/config 2> /dev/null)"}:#Host *}#Host }:#*\**}:#*\?*}}
-    )'
-
-    # Don't complete uninteresting users...
-    zstyle ':completion:*:*:*:users' ignored-patterns \
-      adm amanda apache avahi beaglidx bin cacti canna clamav daemon \
-      dbus distcache dovecot fax ftp games gdm gkrellmd gopher \
-      hacluster haldaemon halt hsqldb ident junkbust ldap lp mail \
-      mailman mailnull mldonkey mysql nagios \
-      named netdump news nfsnobody nobody nscd ntp nut nx openvpn \
-      operator pcap postfix postgres privoxy pulse pvm quagga radvd \
-      rpc rpcuser rpm shutdown squid sshd sync uucp vcsa xfs '_*'
-
-    # ... unless we really want to.
-    zstyle '*' single-ignored show
-
-    # Ignore multiple entries.
-    zstyle ':completion:*:(rm|kill|diff):*' ignore-line other
-    zstyle ':completion:*:rm:*' file-patterns '*:all-files'
-
-    # Kill
-    zstyle ':completion:*:*:*:*:processes' command 'ps -u $LOGNAME -o pid,user,command -w'
-    zstyle ':completion:*:*:kill:*:processes' list-colors '=(#b) #([0-9]#) ([0-9a-z-]#)*=01;36=0=01'
-    zstyle ':completion:*:*:kill:*' menu yes select
-    zstyle ':completion:*:*:kill:*' force-list always
-    zstyle ':completion:*:*:kill:*' insert-ids single
-
-    # Man
-    zstyle ':completion:*:manuals' separate-sections true
-    zstyle ':completion:*:manuals.(^1*)' insert-sections true
-    zstyle ':completion:*:man:*' menu yes select
-
-    # Media Players
-    zstyle ':completion:*:*:mpg123:*' file-patterns '*.(mp3|MP3):mp3\ files *(-/):directories'
-    zstyle ':completion:*:*:mpg321:*' file-patterns '*.(mp3|MP3):mp3\ files *(-/):directories'
-    zstyle ':completion:*:*:ogg123:*' file-patterns '*.(ogg|OGG|flac):ogg\ files *(-/):directories'
-    zstyle ':completion:*:*:mocp:*' file-patterns '*.(wav|WAV|mp3|MP3|ogg|OGG|flac):ogg\ files *(-/):directories'
-
-    # Mutt
-    if [[ -s "$HOME/.mutt/aliases" ]]; then
-      zstyle ':completion:*:*:mutt:*' menu yes select
-      zstyle ':completion:*:mutt:*' users ${${${(f)"$(<"$HOME/.mutt/aliases")"}#alias[[:space:]]}%%[[:space:]]*}
-    fi
-
-    # SSH/SCP/RSYNC
-    zstyle ':completion:*:(ssh|scp|rsync):*' tag-order 'hosts:-host:host hosts:-domain:domain hosts:-ipaddr:ip\ address *'
-    zstyle ':completion:*:(scp|rsync):*' group-order users files all-files hosts-domain hosts-host hosts-ipaddr
-    zstyle ':completion:*:ssh:*' group-order users hosts-domain hosts-host users hosts-ipaddr
-    zstyle ':completion:*:(ssh|scp|rsync):*:hosts-host' ignored-patterns '*(.|:)*' loopback ip6-loopback localhost ip6-localhost broadcasthost
-    zstyle ':completion:*:(ssh|scp|rsync):*:hosts-domain' ignored-patterns '<->.<->.<->.<->' '^[-[:alnum:]]##(.[-[:alnum:]]##)##' '*@*'
-    zstyle ':completion:*:(ssh|scp|rsync):*:hosts-ipaddr' ignored-patterns '^(<->.<->.<->.<->|(|::)([[:xdigit:].]##:(#c,2))##(|%*))' '127.0.0.<->' '255.255.255.255' '::1' 'fe80::*'
-  }
-
-  # Load with `autoload -Uz compstyleinit; compstyleinit'.
-  # Type `compstyle -h' for help.
-  function compstyleinit {
-    typeset -gaU completion_styles
-    typeset -ga completion_style
-    completion_styles=(zephyr)
-
-    function compstyleinit {
-      emulate -L zsh; setopt extendedglob
-
-      local name setupfn
-      local -a match
-
-      # Autoload all compstyle_*_setup functions in fpath.
-      for setupfn in $^fpath/compstyle_*_setup(N); do
-        if [[ $setupfn == */compstyle_(#b)(*)_setup ]]; then
-          name="$match[1]"
-          if [[ -r "$setupfn" ]]; then
-            completion_styles=($completion_styles $name)
-            autoload -Uz compstyle_${name}_setup
-          else
-            print "Cannot read '$setupfn' file containing completion styles."
-          fi
-        else
-          print "Unexpect compstyle setup function '$setupfn'."
-        fi
-      done
-    }
-
-    function _compstyle_usage {
-      emulate -L zsh; setopt extended_glob
-      local -a usage=(
-        'Usage: compstyle [-l] [-h [<style>]]'
-        '       compstyle <style>'
-        'Options:'
-        '  -l            List currently available completion styles'
-        '  -h [<style>]  Display help (for given compstyle)'
-        'Arguments:'
-        '  <style>       Switch to new compstyle'
-        ''
-        'Use `compstyle -h` for help.'
-        'Load with `autoload -Uz compstyleinit; compstyleinit`.'
-        'Set completion style with `compstyle <compstyle>`.'
-      )
-
-      if [[ -n "$1" && -n "$completion_styles[(r)$1]" ]]; then
-        # Run this in a subshell, so we don't need to clean up afterwards.
-        (
-          # If we can't find a _help function, run the _setup function to see
-          # if it will create one.
-          (( $+functions[compstyle_$1_help] )) || compstyle_$1_setup
-
-          # ...then try again.
-          if (( $+functions[compstyle_$1_help] )); then
-            print "Help for '$1' completion style:\n"
-            compstyle_$1_help
-          else
-            print "No help available for '$1' completion style."
-          fi
-        )
-      else
-        printf '%s\n' "${usage[@]}"
-      fi
-    }
-
-    function compstyle {
-      # compstyle [-l] [-h [<style>]]
-      local opt
-      while getopts 'lh' opt; do
-        case "$opt" in
-          l) print Currently available completion styles:
-            print $completion_styles
-            return
-            ;;
-          h) _compstyle_usage "$@[2,-1]"; return $? ;;
-          *) _compstyle_usage;            return 2  ;;
-        esac
-      done
-
-      # error if compstyle specified not found
-      if [[ -z "$1" || -z $completion_styles[(r)$1] ]]; then
-        print >&2 "compstyle: Completion style not found '$1'."
-        _compstyle_usage
-        return 1
-      fi
-
-      # TODO: cleanup any prior completion styles
-
-      # set the new completion styles
-      compstyle_$1_setup "$@[2,-1]" && completion_style=( "$@" )
-    }
-
-    compstyleinit "$@"
-  }
-}
-
-#
-#endregion
-#region Completion
-#
-
-# Let's talk compinit... compinit works by finding _completion files in your fpath. That
-# means fpath needs to be fully populated prior to calling it. But sometimes you need to
-# call compdef before fpath is done being populated to define a completion (eg: plugins
-# do this). compinit has big chicken-and-egg problems. This code handles all those
-# completion use cases by wrapping compinit, queueing calls to compdef, and hooking the
-# real call to compinit to run post_zshrc.
-
-# Define compinit placeholder functions (compdef) so we can queue up calls.
-# That way when the real compinit is called, we can execute the queue.
-typeset -gHa __zshrc1_compdef_queue=()
-function compdef {
-  (( $# )) || return
-  local compdef_args=("${@[@]}")
-  __zshrc1_compdef_queue+=("$(typeset -p compdef_args)")
-}
-
-# Wrap compinit temporarily so that when the real compinit call happens, the
-# queue of compdef calls is processed.
-function compinit {
-  unfunction compinit compdef &>/dev/null
-  autoload -Uz compinit && compinit "$@"
-
-  # Apply all the queued compdefs.
-  local typedef_compdef_args
-  for typedef_compdef_args in $__zshrc1_compdef_queue; do
-    eval $typedef_compdef_args
-    compdef "$compdef_args[@]"
-  done
-  unset __zshrc1_compdef_queue
-
-  # We can run compinit early, and if we did we no longer need a post_zshrc hook.
-  post_zshrc_hook=(${post_zshrc_hook:#run_compinit})
-}
-
+# run_compinit: Initialize the built-in Zsh completion system.
 function run_compinit {
-  # Initialize the built-in Zsh completion system.
-  if [[ -z "$ZSH_COMPDUMP" ]]; then
-    local ZSH_COMPDUMP
-    if zstyle -T ':zephyr:plugin:completion' use-xdg-basedirs; then
-      : ${__zsh_cache_dir:=${XDG_CACHE_HOME:-$HOME/.cache}/zsh}
-      ZSH_COMPDUMP=$__zsh_cache_dir/compdump
-    else
-      ZSH_COMPDUMP=$HOME/.zcompdump
-    fi
-  fi
+  emulate -L zsh; setopt local_options $__z1_opts
+
+  # Zsh compdump file.
+  typeset -g ZSH_COMPDUMP
+  zstyle -s ':z1:completion' compdump 'ZSH_COMPDUMP' ||
+    ZSH_COMPDUMP=$__zsh_cache_dir/zcompdump
 
   # Load and initialize the completion system ignoring insecure directories with a
   # cache time of 20 hours, so it should almost always regenerate the first time a
@@ -1221,92 +305,342 @@ function run_compinit {
     fi
   } &!
 }
-post_zshrc_hook+=(run_compinit)
 
-() {
-  # Set Zsh completion options (16.2.2: https://zsh.sourceforge.io/Doc/Release/Options.html).
-  setopt always_to_end           # Move cursor to the end of a completed word.
-  setopt auto_list               # Automatically list choices on ambiguous completion.
-  setopt auto_menu               # Show completion menu on a successive tab press.
-  setopt auto_param_slash        # If completed parameter is a directory, add a trailing slash.
-  setopt complete_in_word        # Complete from both ends of a word.
-  setopt path_dirs               # Perform path search even on command names with slashes.
-  setopt NO_flow_control         # Disable start/stop characters in shell editor.
-  setopt NO_menu_complete        # Do not autoselect the first completion entry.
+# compstyle_z1_setup: Set Zsh completion styles.
+function compstyle_z1_setup {
+  emulate -L zsh; setopt local_options $__z1_opts
 
-  # Add completions for keg-only brews when available.
-  local brew_prefix
-  if (( $+commands[brew] )); then
-    brew_prefix=${HOMEBREW_PREFIX:-${HOMEBREW_REPOSITORY:-$commands[brew]:A:h:h}}
-    # $HOMEBREW_PREFIX defaults to $HOMEBREW_REPOSITORY but is explicitly set to
-    # /usr/local when $HOMEBREW_REPOSITORY is /usr/local/Homebrew.
-    # https://github.com/Homebrew/brew/blob/2a850e02d8f2dedcad7164c2f4b95d340a7200bb/bin/brew#L66-L69
-    [[ $brew_prefix == '/usr/local/Homebrew' ]] && brew_prefix=$brew_prefix:h
+  # Defaults.
+  zstyle ':completion:*:default' list-colors ${(s.:.)LS_COLORS}
+  zstyle ':completion:*:default' list-prompt '%S%M matches%s'
 
-    # Add brew locations to fpath
-    fpath=(
-      $brew_prefix/opt/curl/share/zsh/site-functions(/N)  # Add curl completions.
-      $brew_prefix/share/zsh/site-functions(-/FN)  # Add zsh completions.
-      $fpath
+  # Case-insensitive (all), partial-word, and then substring completion.
+  zstyle ':completion:*' matcher-list 'm:{a-zA-Z}={A-Za-z}' 'r:|[._-]=* r:|=*' 'l:|=* r:|=*'
+
+  # Group matches and describe.
+  zstyle ':completion:*:*:*:*:*' menu select
+  zstyle ':completion:*:matches' group 'yes'
+  zstyle ':completion:*:options' description 'yes'
+  zstyle ':completion:*:options' auto-description '%d'
+  zstyle ':completion:*:corrections' format ' %F{red}-- %d (errors: %e) --%f'
+  zstyle ':completion:*:descriptions' format ' %F{purple}-- %d --%f'
+  zstyle ':completion:*:messages' format ' %F{green} -- %d --%f'
+  zstyle ':completion:*:warnings' format ' %F{yellow}-- no matches found --%f'
+  zstyle ':completion:*' format ' %F{blue}-- %d --%f'
+  zstyle ':completion:*' group-name ''
+  zstyle ':completion:*' verbose yes
+
+  # Fuzzy match mistyped completions.
+  zstyle ':completion:*' completer _complete _match _approximate
+  zstyle ':completion:*:match:*' original only
+  zstyle ':completion:*:approximate:*' max-errors 1 numeric
+
+  # Increase the number of errors based on the length of the typed word. But make
+  # sure to cap (at 7) the max-errors to avoid hanging.
+  zstyle -e ':completion:*:approximate:*' max-errors 'reply=($((($#PREFIX+$#SUFFIX)/3>7?7:($#PREFIX+$#SUFFIX)/3))numeric)'
+
+  # Don't complete unavailable commands.
+  zstyle ':completion:*:functions' ignored-patterns '(_*|pre(cmd|exec))'
+
+  # Array completion element sorting.
+  zstyle ':completion:*:*:-subscript-:*' tag-order indexes parameters
+
+  # Directories
+  zstyle ':completion:*:*:cd:*' tag-order local-directories directory-stack path-directories
+  zstyle ':completion:*:*:cd:*:directory-stack' menu yes select
+  zstyle ':completion:*:-tilde-:*' group-order 'named-directories' 'path-directories' 'users' 'expand'
+  zstyle ':completion:*' squeeze-slashes true
+  zstyle ':completion:*' special-dirs ..
+
+  # History
+  zstyle ':completion:*:history-words' stop yes
+  zstyle ':completion:*:history-words' remove-all-dups yes
+  zstyle ':completion:*:history-words' list false
+  zstyle ':completion:*:history-words' menu yes
+
+  # Environment Variables
+  zstyle ':completion::*:(-command-|export):*' fake-parameters ${${${_comps[(I)-value-*]#*,}%%,*}:#-*-}
+
+  # Ignore multiple entries.
+  zstyle ':completion:*:(rm|kill|diff):*' ignore-line other
+  zstyle ':completion:*:rm:*' file-patterns '*:all-files'
+
+  # Kill
+  zstyle ':completion:*:*:*:*:processes' command 'ps -u $LOGNAME -o pid,user,command -w'
+  zstyle ':completion:*:*:kill:*:processes' list-colors '=(#b) #([0-9]#) ([0-9a-z-]#)*=01;36=0=01'
+  zstyle ':completion:*:*:kill:*' menu yes select
+  zstyle ':completion:*:*:kill:*' force-list always
+  zstyle ':completion:*:*:kill:*' insert-ids single
+
+  # complete manual by their section
+  zstyle ':completion:*:manuals'    separate-sections true
+  zstyle ':completion:*:manuals.*'  insert-sections   true
+  zstyle ':completion:*:man:*'      menu yes select
+}
+
+# prompt_z1_setup: Add a nice prompt for Z1 users.
+function prompt_z1_setup {
+  # Remove right prompt from prior commands
+  setopt transient_rprompt
+
+  function prompt_pwd {
+    setopt local_options extended_glob
+
+    local cur_pwd="${PWD/#$HOME/~}"
+    local MATCH result
+
+    if [[ "$cur_pwd" == (#m)[/~] ]]; then
+      result="$MATCH"
+    elif zstyle -m ':z1:prompt' pwd-length 'full'; then
+      result=${PWD}
+    elif zstyle -m ':z1:prompt' pwd-length 'long'; then
+      result=${cur_pwd}
+    else
+      result="${${${${(@j:/:M)${(@s:/:)cur_pwd}##.#?}:h}%/}//\%/%%}/${${cur_pwd:t}//\%/%%}"
+    fi
+
+    print -r -- "$result"
+  }
+
+  function +vi-git_status {
+    # Check for untracked files or updated submodules since vcs_info does not.
+    if [[ -n $(git ls-files --other --exclude-standard 2> /dev/null) ]]; then
+      hook_com[unstaged]='%F{red}•%f'
+    fi
+
+    ### git: Show ⇡N/⇣N when your local branch is ahead-of or behind remote HEAD.
+    # Make sure you have added misc to your 'formats':  %m
+    local ahead behind
+    local -a gitstatus
+
+    # Exit early in case the worktree is on a detached HEAD
+    git rev-parse ${hook_com[branch]}@{upstream} >/dev/null 2>&1 || return 0
+
+    local -a ahead_and_behind=(
+      $(git rev-list --left-right --count HEAD...${hook_com[branch]}@{upstream} 2>/dev/null)
     )
+
+    ahead=${ahead_and_behind[1]}
+    behind=${ahead_and_behind[2]}
+
+    (( $ahead )) && gitstatus+=( "⇡${ahead}" )
+    (( $behind )) && gitstatus+=( "⇣${behind}" )
+
+    hook_com[misc]+=${(j:/:)gitstatus}
+  }
+
+  function prompt_z1_precmd {
+    setopt local_options
+    unsetopt xtrace ksh_arrays
+    _prompt_z1_pwd=$(prompt_pwd)
+    vcs_info
+  }
+
+  function prompt_z1_setup {
+    setopt local_options
+    unsetopt xtrace ksh_arrays
+    prompt_opts=(cr percent sp subst)
+
+    # Load required functions.
+    autoload -Uz add-zsh-hook
+    autoload -Uz vcs_info
+
+    # Add hook for calling vcs_info before each command.
+    add-zsh-hook precmd prompt_z1_precmd
+
+    # Define default prompt colors.
+    typeset -gA _prompt_z1_colors=(
+      black   "000"
+      red     "001"
+      green   "002"
+      yellow  "003"
+      blue    "004"
+      magenta "005"
+      cyan    "006"
+      white   "007"
+    )
+
+    # Use extended color pallete if available.
+    if [[ $TERM = *256color* || $TERM = *rxvt* ]]; then
+      zstyle -s ':z1:prompt:colors' black   '_prompt_z1_colors[black]'   || _prompt_z1_colors[black]="000"
+      zstyle -s ':z1:prompt:colors' red     '_prompt_z1_colors[red]'     || _prompt_z1_colors[red]="160"
+      zstyle -s ':z1:prompt:colors' green   '_prompt_z1_colors[green]'   || _prompt_z1_colors[green]="076"
+      zstyle -s ':z1:prompt:colors' yellow  '_prompt_z1_colors[yellow]'  || _prompt_z1_colors[yellow]="178"
+      zstyle -s ':z1:prompt:colors' blue    '_prompt_z1_colors[blue]'    || _prompt_z1_colors[blue]="039"
+      zstyle -s ':z1:prompt:colors' magenta '_prompt_z1_colors[magenta]' || _prompt_z1_colors[magenta]="168"
+      zstyle -s ':z1:prompt:colors' cyan    '_prompt_z1_colors[cyan]'    || _prompt_z1_colors[cyan]="037"
+      zstyle -s ':z1:prompt:colors' white   '_prompt_z1_colors[white]'   || _prompt_z1_colors[white]="255"
+    fi
+
+    # Define default prompt symbols.
+    typeset -gA _prompt_z1_chars=(
+      success "%%"
+      error   "%%"
+      vicmd   "V"
+      stash   "="
+      dirty   "*"
+      ahead   "+"
+      behind  "-"
+    )
+
+    # Use unicode chars if available.
+    if ! zstyle -t ':z1:prompt:unicode' disable; then
+      zstyle -s ':z1:prompt:character' success '_prompt_z1_chars[success]' || _prompt_z1_chars[success]="❱"
+      zstyle -s ':z1:prompt:character' error   '_prompt_z1_chars[error]'   || _prompt_z1_chars[error]="❱"
+      zstyle -s ':z1:prompt:character' vicmd   '_prompt_z1_chars[vicmd]'   || _prompt_z1_chars[vicmd]="❰"
+      zstyle -s ':z1:prompt:character' stash   '_prompt_z1_chars[stash]'   || _prompt_z1_chars[stash]="☰"
+      zstyle -s ':z1:prompt:character' dirty   '_prompt_z1_chars[dirty]'   || _prompt_z1_chars[dirty]="•"  # "✱"
+      zstyle -s ':z1:prompt:character' ahead   '_prompt_z1_chars[ahead]'   || _prompt_z1_chars[ahead]="⇡"
+      zstyle -s ':z1:prompt:character' behind  '_prompt_z1_chars[behind]'  || _prompt_z1_chars[behind]="⇣"
+    fi
+
+    # Set vcs_info parameters.
+    zstyle ':vcs_info:*' enable git
+    zstyle ':vcs_info:*' check-for-changes true
+    zstyle ':vcs_info:*' stagedstr "%F{${_prompt_z1_colors[green]}}${_prompt_z1_chars[dirty]}%f"
+    zstyle ':vcs_info:*' unstagedstr "%F{${_prompt_z1_colors[yellow]}}${_prompt_z1_chars[dirty]}%f"
+    zstyle ':vcs_info:*' formats '%b%c%u%m'
+    zstyle ':vcs_info:*' actionformats "%b%c%u%m|%F{cyan}%a%f"
+    zstyle ':vcs_info:git*+set-message:*' hooks git_status
+
+    # Define prompts.
+    PROMPT='%F{${_prompt_z1_colors[blue]}}$_prompt_z1_pwd%f %F{${_prompt_z1_colors[green]}}$_prompt_z1_chars[success]%f '
+    RPROMPT='${vcs_info_msg_0_}'
+  }
+
+  function prompt_z1_preview {
+    local +h PROMPT=''
+    local +h RPROMPT=''
+    local +h SPROMPT=''
+
+    editor-info 2> /dev/null
+    prompt_preview_theme 'z1'
+  }
+
+  prompt_z1_setup "$@"
+}
+
+function z1_editor_no_ps2 {
+  emulate -L zsh
+  local -r func=no-ps2-test
+
+  if (( ${+functions[$func]} )); then
+    unfunction -- $func
   fi
 
-  # Add Fish-like custom completions directory.
-  fpath=($__zsh_config_dir/completions(/N) $fpath)
+  if functions[$func]=$PREBUFFER$BUFFER 2>/dev/null &&
+    (( ${+functions[$func]} )); then
+    unfunction -- $func
+    if functions[$func]=$PREBUFFER$BUFFER$'\ndo\ndone' 2>/dev/null &&
+      (( ${+functions[$func]} )) ; then
+      unfunction -- $func
+    else
+      local w
+      zstyle -s 'z1:editor:no-ps2:' accept-line w || w=accept-line
+      if [[ -n $w ]]; then
+        builtin zle -- $w
+      fi
+      return
+    fi
+  fi
+
+  LBUFFER+=$'\n'
 }
 
-() {
-  local compstyle
-  zstyle -s ':zephyr:plugin:completion' compstyle 'compstyle' || compstyle=zephyr
-  (( $+functions[compstyle_${compstyle}_setup] )) && compstyle_${compstyle}_setup
+# plugin-clone: Use git to clone Zsh plugins in parallel.
+function plugin-clone {
+  emulate -L zsh; setopt local_options $__z1_opts
+
+  local repo_dir git_url
+  zstyle -s ':z1:plugins:repos' dir     'repo_dir' || repo_dir=$__zsh_cache_dir/repos
+  zstyle -s ':z1:plugins:repos' git_url 'git_url'  || git_url="https://github.com"
+
+  local repo repo_url plugin_dir
+  local -Ua repos=($@)
+  for repo in $repos; do
+    if [[ $repo == (http(|s)://|git@)* ]]; then
+      repo_url=$repo
+    else
+      repo_url=$git_url/$repo
+    fi
+
+    plugin_dir=$repo_dir/${${repo_url:t}%.git}
+    if [[ ! -d $plugin_dir ]]; then
+      echo "Cloning $repo..."
+      (
+        command git clone --quiet --depth 1 --recursive --shallow-submodules $repo_url $plugin_dir
+        plugin-compile $plugin_dir
+      ) &
+    fi
+  done
+  wait
 }
 
-#
-#endregion
-#region Plugins
-#
-
-() {
-  [[ -r "${ZSHRC1:A:h}/lib/unplugged.zsh" ]] || return 1
-  source ${ZSHRC1:A:h}/lib/unplugged.zsh
-
-  local -a clone_plugins path_plugins fpath_plugins zsh_plugins
-  zstyle -a ':zephyr:zsh-plugins:kind:clone' load 'clone_plugins'
-  zstyle -a ':zephyr:zsh-plugins:kind:path'  load 'path_plugins'
-  zstyle -a ':zephyr:zsh-plugins:kind:fpath' load 'fpath_plugins'
-  zstyle -a ':zephyr:zsh-plugins:kind:zsh'   load 'zsh_plugins'
-
-  clone_plugins=($clone_plugins $path_plugins $fpath_plugins $zsh_plugins)
-  [[ "${#clone_plugins}" -gt 0 ]] || return
-  plugin clone $clone_plugins
-  plugin load --kind path $path_plugins
-  plugin load --kind fpath $fpath_plugins
-  plugin load $zsh_plugins
+# plugin-home: Show the plugin home directory
+function plugin-home {
+  emulate -L zsh; setopt local_options $__z1_opts
+  local repo_dir
+  zstyle -s ':z1:plugins:repos' dir 'repo_dir' || repo_dir=$__zsh_cache_dir/repos
+  print -r -- $repo_dir
 }
 
-#
-#endregion
-#region Zsh conf.d
-#
-
-function run_confd {
-  # Which conf.d directory to use? Use glob_subst to support '~'.
-  : ${__zsh_config_dir:=${ZDOTDIR:-${XDG_CONFIG_HOME:-$HOME/.config}/zsh}}
-  local confd
-  zstyle -s ':zephyr:plugin:confd' directory 'confd' || confd=$__zsh_config_dir/conf.d
-  confd=${~confd}
-
-  # Source all scripts in conf.d.
-  local zrcfile
-  for zrcfile in $confd/*.{z,}sh(N); do
-    # ignore files that begin with ~
-    [[ "${zrcfile:t}" == '~'* ]] && continue
-    source "$zrcfile"
+# plugin-list: List cloned plugins.
+function plugin-list {
+  emulate -L zsh; setopt local_options $__z1_opts
+  local repo_dir plugin_dir
+  zstyle -s ':z1:plugins:repos' dir 'repo_dir' || repo_dir=$__zsh_cache_dir/repos
+  for plugin_dir in $repo_dir/*/.git(N/); do
+    print -r -- ${plugin_dir:A:h:t}
   done
 }
-post_zshrc_hook+=(run_confd)
 
-#
-#endregion
+# plugin-update: Use git to pull updates to Zsh plugins.
+function plugin-update {
+  emulate -L zsh; setopt local_options $__z1_opts
+  local repo_dir
+  zstyle -s ':z1:plugins:repos' dir 'repo_dir' || repo_dir=$__zsh_cache_dir/repos
+
+  local plugin_dir oldsha newsha
+  for plugin_dir in $repo_dir/*/.git(N/); do
+    plugin_dir=${plugin_dir:A:h}
+    echo "Updating ${plugin_dir:t}..."
+    (
+      oldsha=$(command git -C $plugin_dir rev-parse --short HEAD)
+      command git -C $plugin_dir pull --quiet --ff --depth 1 --rebase --autostash
+      newsha=$(command git -C $plugin_dir rev-parse --short HEAD)
+      [[ $oldsha == $newsha ]] || echo "Plugin updated: $plugin_dir:t ($oldsha -> $newsha)"
+    ) &
+  done
+  wait
+  plugin-compile
+  echo "Update complete."
+}
+
+# plugin-compile: Compile plugins.
+function plugin-compile {
+  emulate -L zsh; setopt local_options $__z1_opts
+  local repo_dir
+  zstyle -s ':z1:plugins:repos' dir 'repo_dir' || repo_dir=$__zsh_cache_dir/repos
+  autoload -Uz zrecompile
+  local zfile
+  for zfile in ${1:-$repo_dir}/**/*.zsh{,-theme}(N); do
+    [[ $zfile != */test-data/* ]] || continue
+    zrecompile -pq "$zfile"
+  done
+}
+
+# Run z1.
+() {
+  z1_funcdir
+  z1_colorize
+  z1_directory
+  z1_editor
+  z1_history
+  z1_utility
+  z1_plugins
+  z1_confd
+  z1_completions
+  z1_prompt
+}
 
 # vim: ft=zsh sw=2 ts=2 et
